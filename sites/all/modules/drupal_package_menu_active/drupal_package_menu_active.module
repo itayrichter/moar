@@ -1,0 +1,77 @@
+<?php
+/**
+ * Implements hook_form_alter().
+ */
+function drupal_package_menu_active_form_alter(&$form, $form_state, $form_id){
+    switch($form_id){
+        case'menu_edit_item':
+            $settings = drupal_package_menu_active_variable_get($form['original_item']['#value']['menu_name']);
+            $form['drupal_package_menu_active'] = array(
+                '#type'             => 'textarea',
+                '#title'            => 'Правило добавление класса "active":',
+                '#attributes'       => array(
+                    'placeholder'       => implode(PHP_EOL, array('node/*', 'news/*', 'reviews/*/edit'))
+                ),
+                '#default_value'    => !empty($settings[$form['mlid']['#value']]) ? $settings[$form['mlid']['#value']] : ''
+            );
+            $form['#submit'][] = 'drupal_package_menu_active_save_item';
+        break;
+    }
+}
+/**
+ * Implements hook_form_submit().
+ */
+function drupal_package_menu_active_save_item($form, $form_state){
+    $settings = drupal_package_menu_active_variable_get($form['original_item']['#value']['menu_name']);
+    if(!empty($settings[$form_state['values']['mlid']])){
+        unset($settings[$form_state['values']['mlid']]);
+    }
+    if(!empty($form_state['values']['drupal_package_menu_active'])){
+        $settings[$form_state['values']['mlid']] = $form_state['values']['drupal_package_menu_active'];
+    }
+    drupal_package_menu_active_variable_set($settings, $form_state['values']['menu_name']);
+}
+/**
+ * Implements hook_menu_link_delete().
+ */
+function drupal_package_menu_active_menu_link_delete($link){
+    $settings = drupal_package_menu_active_variable_get($link['menu_name']);
+    if(!empty($settings[$link['mlid']])){
+        unset($settings[$link['mlid']]);
+        drupal_package_menu_active_variable_set($settings, $link['menu_name']);
+    }
+}
+/**
+ * Implements hook_preprocess_menu_link().
+ */
+function drupal_package_menu_active_preprocess_menu_link(&$vars){
+    if(!empty($vars['element']['#original_link']['menu_name'])){
+        $settings = drupal_package_menu_active_variable_get($vars['element']['#original_link']['menu_name']);
+        if(!empty($settings[$vars['element']['#original_link']['mlid']])){
+            if(drupal_package_menu_active_page_is_nav($settings[$vars['element']['#original_link']['mlid']])){
+                $vars['element']['#localized_options']['attributes']['class'][] = 'active';
+            }
+        }
+    }
+}
+
+function drupal_package_menu_active_page_is_nav($pages){
+    $path = drupal_strtolower(drupal_get_path_alias($_GET['q']));
+    $page_match = drupal_match_path($path, $pages);
+    if ($path != $_GET['q']) {
+        $page_match = $page_match || drupal_match_path($_GET['q'], $pages);
+    }
+    return $page_match;
+}
+
+function drupal_package_menu_active_variable_set($data = '', $file_name = ''){
+    $path = drupal_get_path('module', 'drupal_package_menu_active').'/settings/'.$file_name;
+    file_put_contents($path, json_encode($data));
+}
+function drupal_package_menu_active_variable_get($file_name = ''){
+    $path = drupal_get_path('module', 'drupal_package_menu_active').'/settings/'.$file_name;
+    if(file_exists($path)){
+        $file = file_get_contents($path);
+    }
+    return !empty($file) ? json_decode($file, TRUE) : array();
+}

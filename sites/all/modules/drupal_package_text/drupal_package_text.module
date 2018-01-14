@@ -1,0 +1,655 @@
+<?php
+function drupal_package_text_menu(){
+	$items = array();
+	$items['admin/config/development/drupal_package_text'] = array (
+        'title' => t('Texts management site'),
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('drupal_package_text_table_page'),
+        'access arguments'=>array('administer site configuration'),
+    );
+    $items['admin/config/development/drupal_package_text/add'] = array (
+        'title' => t('Add text'),
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('drupal_package_text_form_page'),
+        'access arguments'=>array('administer site configuration'),
+        'type' => MENU_LOCAL_ACTION,
+    );
+    $items['admin/config/development/drupal_package_text/%/edit'] = array (
+        'title' => t('Edit text'),
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('drupal_package_text_form_page', 4),
+        'access arguments'=>array('administer site configuration'),
+    );
+    $items['admin/config/development/drupal_package_text/%/delete'] = array (
+        'title' => t('Delete text'),
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('drupal_package_text_delete_form_page', 4),
+        'access arguments'=>array('administer site configuration'),
+    );
+    // groups
+    $items['admin/config/development/drupal_package_text/add_group'] = array (
+        'title' => t('Add group'),
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('drupal_package_text_group_form_page'),
+        'access arguments'=>array('administer site configuration'),
+        'type' => MENU_LOCAL_ACTION,
+    );
+    $items['admin/config/development/drupal_package_text/edit_group/%'] = array (
+        'title' => t('Edit group'),
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('drupal_package_text_group_form_page', 5),
+        'access arguments'=>array('administer site configuration')
+    );
+    $items['admin/config/development/drupal_package_text/delete_group/%'] = array (
+        'title' => t('Delete group'),
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('drupal_package_text_delete_group_form_page', 5),
+        'access arguments'=>array('administer site configuration'),
+    );
+    // update translation
+    $items['admin/config/development/drupal_package_text/update'] = array (
+        'title' => t('Update translation'),
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('drupal_package_text_update_form_page'),
+        'access arguments'=>array('administer site configuration'),
+        'type' => MENU_LOCAL_ACTION,
+    );
+	return $items;
+}
+function drupal_package_text_table_page($form, $form_state){
+	$form = array();
+	$result_groups = db_select('drupal_package_text_groups', 'g')
+		->fields('g')
+		->execute()->fetchAll();
+	$query = db_select('drupal_package_text', 'd')->extend('PagerDefault');
+	$query->fields('d');
+	if(!empty($_GET['group_id'])){
+		$query->innerJoin('drupal_package_text_groups', 'g', 'g.machine_name = d.group_name');
+		$query->condition('g.id', $_GET['group_id']);
+	}
+	if(!empty($_GET['text'])){
+		$query->condition(db_or()
+			->condition('d.title', '%'.db_like($_GET['text']).'%', 'LIKE')
+			->condition('d.machine_name', '%'.db_like($_GET['text']).'%', 'LIKE')
+			->condition('d.data', '%'.db_like($_GET['text']).'%', 'LIKE')
+		);
+	}
+	$results = $query->groupBy('d.id')->orderBy('d.id', 'DESC')->limit(50)->execute()->fetchAll();
+	$header = array(
+		t('Name'),
+		t('Text'),
+		t('Group'),
+		t('How to display the website (php)'),
+		t('Action')
+	);
+	$rows = array();
+	foreach ($results as $row){
+		$rows[$row->id] = array();
+		$rows[$row->id]['title'] = '<b>'.$row->title.'</b> ('.t('Machine name').': '.$row->machine_name.')';
+			$code = 'if(function_exists(\'drupal_package_text_load\')){
+			print drupal_package_text_load(\''.$row->machine_name.'\');
+		}';
+		$text_row = '';
+		$row_data = unserialize($row->data);
+		foreach ($row_data as $key_l => $value) {
+			$text_row .= '<b>'.$key_l.': </b>'.strip_tags(truncate_utf8($value, 100, true, true), '<br/>, <b>').'<br/>';
+		}
+		$rows[$row->id]['text'] = $text_row;
+		$rows[$row->id]['group'] = !empty($row->group_name) ? $row->group_name : '';
+		if(!empty($row->group_name) && !empty($result_groups)){
+			foreach ($result_groups as $result_group){
+				if($result_group->machine_name == $row->group_name){
+					$rows[$row->id]['group'] = $result_group->title;
+				}
+			}
+		}
+		$rows[$row->id]['code'] = '<textarea rows="3" style="width: 100%; border: 1px solid #000;" readonly="readonly">'.print_r($code, true).'</textarea>';
+		$links = array();
+		$links[] = l(t('Edit'), 'admin/config/development/drupal_package_text/'.$row->id.'/edit');
+		$links[] = l(t('Delete'), 'admin/config/development/drupal_package_text/'.$row->id.'/delete');
+		$rows[$row->id]['links'] = implode('<br/>', $links);
+	}
+	$form['filter'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Filter'),
+		'#collapsible' => TRUE,
+		'#collapsed' => TRUE,
+	);
+	$options = array(0 => '');
+	if(!empty($result_groups)) foreach ($result_groups as $result) $options[$result->id] = $result->title;
+	$form['filter']['table'] = array(
+		'#prefix' => '<table style="float:left;width:auto;"><tr>',
+		'#suffix' => '</tr></table>'
+	);
+	$form['filter']['table']['group'] = array(
+		'#title' => t('Group name'),
+		'#type' => 'select',
+		'#options' => $options,
+		'#default_value' => !empty($_GET['group_id']) && array_key_exists($_GET['group_id'], $options) ? $_GET['group_id'] : '',
+		'#prefix' => '<td>',
+		'#suffix' => '</td>'
+	);
+	$form['filter']['table']['text'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Text'),
+		'#default_value' => !empty($_GET['text']) ? $_GET['text'] : '',
+		'#attributes' => array('placeholder' => t('Name / Machine name / Text')),
+		'#prefix' => '<td>',
+		'#suffix' => '</td>'
+	);
+	$form['filter']['table']['search'] = array(
+		'#type' => 'submit',
+		'#name' => 'search',
+		'#value' => t('Search'),
+		'#attributes' => array('style' => 'margin: 10px 0 0;'),
+		'#prefix' => '<td>',
+		'#suffix' => '</td>'
+	);
+	$form['filter']['table']['reset'] = array(
+		'#type' => 'submit',
+		'#name' => 'reset',
+		'#value' => t('Reset'),
+		'#attributes' => array('style' => 'margin: 10px 0 0;'),
+		'#prefix' => '<td>',
+		'#suffix' => '</td>'
+	);
+	if(!empty($_GET['group_id']) && !empty($result_groups)){
+		foreach ($result_groups as $result_group){
+			if($result_group->id == $_GET['group_id']){
+				$g_rows = array(
+					array(
+						'<b>'.$result_group->title.'</b> ('.t('Machine name').': '.$result_group->machine_name.')',
+						l(t('Edit'), 'admin/config/development/drupal_package_text/edit_group/'.$result_group->id),
+						l(t('Delete'), 'admin/config/development/drupal_package_text/delete_group/'.$result_group->id),
+					)
+				);
+				$form['group'] = array(
+					'#type' => 'fieldset',
+					'#title' => t('Group'),
+					'#collapsible' => TRUE,
+					'#collapsed' => TRUE,
+				);
+				$form['group']['info'] = array(
+					'#type' => 'markup',
+					'#markup' => theme('table', array('rows' => $g_rows))
+				);
+			}
+		}
+	}
+	$form['table'] = array(
+		'#type' => 'markup',
+		'#markup' => theme('table', array('header' => $header, 'rows' => $rows, 'empty' => t('The list is empty.')))
+	);
+	$form['pager'] = array(
+		'#theme' => 'pager'
+	);
+	return $form;
+}
+function drupal_package_text_table_page_submit($form, $form_state){
+	$query = array();
+	if(!empty($form_state['triggering_element']['#name']) && $form_state['triggering_element']['#name'] == 'search'){
+		if(!empty($form_state['values']['group'])) $query['group_id'] = $form_state['values']['group'];
+		if(!empty($form_state['values']['text'])) $query['text'] = $form_state['values']['text'];
+	}
+	drupal_goto($_GET['q'], array('query' => $query));
+}
+function drupal_package_text_form_page($form, $form_state, $id = 0){
+	$form = array();
+	$info = db_select('drupal_package_text', 'd')
+		->fields('d')
+		->condition('d.id', $id)
+		->execute()->fetchObject();
+	if(!empty($info->id)){
+		$form['id'] = array(
+			'#type' => 'value',
+			'#value' => $info->id
+		);
+	}
+	$form['title'] = array(
+	    '#title' => t('Name'),
+	    '#type' => 'textfield',
+	    '#default_value' => '',
+	    '#required' => TRUE,
+	    '#size' => 30,
+	    '#default_value' => !empty($info->title) ? $info->title : ''
+	);
+	$form['machine_name'] = array(
+   	 	'#type' => 'machine_name',
+    	'#default_value' => '',
+    	'#maxlength' => 32,
+    	'#machine_name' => array(
+    		'exists' => 'node_type_load',
+      		'source' => array('title'),
+    	),
+    	'#default_value' => !empty($info->machine_name) ? $info->machine_name : ''
+  	);
+  	$options = array('' => '');
+  	$results = db_select('drupal_package_text_groups', 'g')
+		->fields('g', array('title', 'machine_name'))
+		->execute()->fetchAll();
+  	if(!empty($results)) foreach ($results as $result) $options[$result->machine_name] = $result->title;
+  	$form['group'] = array(
+  		'#type' => 'select',
+  		'#title' => t('Group'),
+  		'#options' => $options,
+  		'#default_value' => !empty($info->group_name) && array_key_exists($info->group_name, $options) ? $info->group_name : ''
+  	);
+  	$form['text'] = array(
+  		'#tree' => TRUE
+  	);
+  	$data_text = !empty($info->data) ? unserialize($info->data) : array();
+  	$language_default = language_default();
+  	foreach (language_list() as $lang){
+  		if(!empty($lang->enabled)){
+	  		$form['text'][$lang->language] = array(
+				'#title' => t('Text').' ('.$lang->name.')',
+				'#type' => 'textarea',
+				'#rows' => 2,
+				'#required' => $lang->language == $language_default->language ? TRUE : FALSE,
+				'#default_value' => !empty($data_text[$lang->language]) ? $data_text[$lang->language] : ''
+			);
+  		}
+  	}
+  	$form['actions'] = array('#type' => 'actions');
+  	$form['actions']['submit'] = array(
+  		'#type' => 'submit',
+  		'#value' => t('Save')
+  	);
+	return $form;
+}
+function drupal_package_text_form_page_validate(&$form, &$form_state){
+	$query = db_select('drupal_package_text', 'd');
+	$query->fields('d');
+	$query->condition('d.title', $form_state['values']['title']);
+	if(!empty($form_state['values']['id'])){
+		$query->condition('d.id', $form_state['values']['id']);
+	}
+	$type_label = $query->execute()->fetchField();
+	if($type_label){
+		if(empty($form_state['values']['id'])){
+			form_set_error('title', '');
+		} else {
+			if($form_state['values']['id'] != $type_label){
+				form_set_error('title', '');
+			}
+		}
+	}
+	$query = db_select('drupal_package_text', 'd');
+	$query->fields('d');
+	$query->condition('d.machine_name', $form_state['values']['machine_name']);
+	if(!empty($form_state['values']['id'])){
+		$query->condition('d.id', $form_state['values']['id']);
+	}
+	$type_name = $query->execute()->fetchField();
+	if($type_name){
+		if(empty($form_state['values']['id'])){
+			form_set_error('machine_name', '');
+		} else {
+			if($form_state['values']['id'] != $type_name){
+				form_set_error('machine_name', '');
+			}
+		}
+	}
+}
+function drupal_package_text_form_page_submit($form, $form_state){
+	$language_default = language_default();
+	$d_text = $form_state['values']['text'][$language_default->language];
+	if(function_exists('ytnf_translate_text')){
+		foreach($form_state['values']['text'] as $lang => $text){
+			$text = trim($text);
+			if(!empty($text)) continue;
+			$langs = $language_default->language.'-'.$lang;
+			$text = ytnf_translate_text($d_text, $lang, $language_default->language);
+			if(!empty($text)){
+				$form_state['values']['text'][$lang] = $text;
+			}
+		}
+	}
+	if(empty($form_state['values']['id'])){
+		db_insert('drupal_package_text')
+			->fields(array(
+				'title' => $form_state['values']['title'],
+				'machine_name' => $form_state['values']['machine_name'],
+				'group_name' => $form_state['values']['group'],
+				'data' => serialize($form_state['values']['text'])
+			))
+			->execute();
+		drupal_set_message(t('Data saved successfully.'));
+	} else {
+		db_update('drupal_package_text')
+			->fields(array(
+				'title' => $form_state['values']['title'],
+				'machine_name' => $form_state['values']['machine_name'],
+				'group_name' => $form_state['values']['group'],
+				'data' => serialize($form_state['values']['text'])
+			))
+			->condition('id', $form_state['values']['id'])
+			->execute();
+		drupal_set_message(t('Data successfully updated.'));
+	}
+	drupal_goto('admin/config/development/drupal_package_text');
+}
+function drupal_package_text_load($machine_name = ''){
+	$text = '';
+	$info = db_select('drupal_package_text', 'd')
+		->fields('d')
+		->condition('d.machine_name', $machine_name)
+		->execute()->fetchObject();
+	$data_text = !empty($info->data) ? unserialize($info->data) : array();
+	if(!empty($data_text[$GLOBALS['language']->language])){
+		$text = $data_text[$GLOBALS['language']->language];
+	}
+	if(empty($text) && !empty($data_text)){
+		$language_default = language_default();
+		if(!empty($data_text[$language_default->language])){
+			$text = $data_text[$language_default->language];
+		}
+	}
+	return $text;
+}
+function drupal_package_text_delete_form_page($form, &$form_state, $id){
+	$form = array();
+	$form['description'] = array(
+		'#type' => 'markup',
+		'#markup' => '<div class="desciption">'.t('This action cannot be undone.').'<br/><br/></div>'
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Delete')
+	);
+	$form['link'] = array(
+		'#type' => 'markup',
+		'#markup' => l(t('Cancel'), 'admin/config/development/drupal_package_text')
+	);
+	$form['id'] = array(
+		'#type' => 'value',
+		'#value' => $id
+	);
+  	return $form;
+}
+function drupal_package_text_delete_form_page_submit($form, $form_state){
+	db_delete('drupal_package_text')
+		->condition('id', $form_state['values']['id'])
+		->execute();
+	drupal_set_message(t('Data deleted successfully.'));
+	cache_clear_all();
+	drupal_goto('admin/config/development/drupal_package_text');
+}
+function drupal_package_text_group_form_page($form, $form_state, $id = 0){
+	$form = array();
+	$info = db_select('drupal_package_text_groups', 'g')
+		->fields('g')
+		->condition('g.id', $id)
+		->execute()->fetchObject();
+	if(!empty($info->id)){
+		$form['id'] = array(
+			'#type' => 'value',
+			'#value' => $info->id
+		);
+	}
+	$form['title'] = array(
+	    '#title' => t('Group name'),
+	    '#type' => 'textfield',
+	    '#default_value' => '',
+	    '#required' => TRUE,
+	    '#size' => 30,
+	    '#default_value' => !empty($info->title) ? $info->title : ''
+	);
+	$form['machine_name'] = array(
+   	 	'#type' => 'machine_name',
+    	'#default_value' => '',
+    	'#maxlength' => 32,
+    	'#machine_name' => array(
+      		'exists' => 'node_type_load',
+      		'source' => array('title'),
+    	),
+    	'#default_value' => !empty($info->machine_name) ? $info->machine_name : '',
+    	'#disabled' => !empty($info->machine_name) ? TRUE : FALSE
+  	);
+  	$form['actions'] = array('#type' => 'actions');
+  	$form['actions']['submit'] = array(
+  		'#type' => 'submit',
+  		'#value' => t('Save')
+  	);
+	return $form;
+}
+function drupal_package_text_group_form_page_validate($form, $form_state){
+	$type_label = db_select('drupal_package_text_groups', 'd')
+		->fields('d')
+		->condition('d.title', $form_state['values']['title'])
+		->execute()->fetchField();
+	if($type_label){
+		if(empty($form_state['values']['id'])){
+			form_set_error('title', '');
+		} else {
+			if($form_state['values']['id'] != $type_label){
+				form_set_error('title', '');
+			}
+		}
+	}
+	$type_name = db_select('drupal_package_text_groups', 'd')
+		->fields('d')
+		->condition('d.machine_name', $form_state['values']['machine_name'])
+		->execute()->fetchField();
+	if($type_name){
+		if(empty($form_state['values']['id'])){
+			form_set_error('machine_name', '');
+		} else {
+			if($form_state['values']['id'] != $type_name){
+				form_set_error('machine_name', '');
+			}
+		}
+	}
+}
+function drupal_package_text_group_form_page_submit($form, $form_state){
+	if(empty($form_state['values']['id'])){
+		$group_id = db_insert('drupal_package_text_groups')
+			->fields(array(
+				'title' => $form_state['values']['title'],
+				'machine_name' => $form_state['values']['machine_name']
+			))
+			->execute();
+		drupal_set_message(t('Data saved successfully.'));
+	} else {
+		$group_id = $form_state['values']['id'];
+		db_update('drupal_package_text_groups')
+			->fields(array(
+				'title' => $form_state['values']['title']
+			))
+			->condition('id', $form_state['values']['id'])
+			->execute();
+		drupal_set_message(t('Data successfully updated.'));
+	}
+	drupal_goto('admin/config/development/drupal_package_text', array('query' => array('group_id' => $group_id)));
+}
+function drupal_package_text_delete_group_form_page($form, $form_state, $id = 0){
+	$form = array();
+	$form['description'] = array(
+		'#type' => 'markup',
+		'#markup' => '<div class="desciption">'.t('This action cannot be undone.').'<br/><br/></div>'
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Delete')
+	);
+	$form['link'] = array(
+		'#type' => 'markup',
+		'#markup' => l(t('Cancel'), 'admin/config/development/drupal_package_text')
+	);
+	$form['id'] = array(
+		'#type' => 'value',
+		'#value' => $id
+	);
+  	return $form;
+}
+function drupal_package_text_delete_group_form_page_submit($form, $form_state){
+	$info = db_select('drupal_package_text_groups', 'g')
+		->fields('g')
+		->condition('g.id', $form_state['values']['id'])
+		->execute()->fetchObject();
+	if(!empty($info->machine_name)){
+		db_update('drupal_package_text')
+			->fields(array(
+				'group_name' => ''
+			))
+			->condition('group_name', $info->machine_name)
+			->execute();
+	}
+	db_delete('drupal_package_text_groups')
+		->condition('id', $form_state['values']['id'])
+		->execute();
+	drupal_set_message(t('Data deleted successfully.'));
+	cache_clear_all();
+	drupal_goto('admin/config/development/drupal_package_text');
+}
+function drupal_package_text_cron(){
+	drupal_package_text_cron_update_bd();
+}
+function drupal_package_text_cron_update_bd(){
+	$ts = variable_get('drupal_package_text_t', array());
+	foreach ($ts as $module_name => $g_t){
+		foreach ($g_t as $machine_name => $text){
+			$row = array(
+				'module_name' => $module_name,
+				'machine_name' => $machine_name,
+				'text' => $text
+			);
+			$operations[] = array('drupal_package_text_cron_update_bd_json_add', array(serialize($row)));
+		}
+	}
+	if(!empty($operations)){
+		$batch = array(
+		    'operations' 		=> $operations,
+		    'title' 			=> t('Processing'),
+		    'init_message' 		=> t('Initializing.'),
+		    'progress_message' 	=> t('Completed @current of @total.'),
+		    'error_message' 	=> t('An error has occurred.'),
+		);
+		batch_set($batch);
+		$batch = &batch_get();
+	  	$batch['progressive'] = FALSE;
+	  	batch_process();
+  		return TRUE;
+	}
+}
+function drupal_package_text_cron_update_bd_json_add($data){
+	$data = unserialize($data);
+	$ts = variable_get('drupal_package_text_t', array());
+	unset($ts[$data['module_name']][$data['machine_name']]);
+	if(empty($ts[$data['module_name']])){
+		unset($ts[$data['module_name']]);
+	}
+	variable_set('drupal_package_text_t', $ts);
+	$is_group = db_select('drupal_package_text_groups', 'g')
+		->fields('g')
+		->condition('g.machine_name', $data['module_name'])
+		->execute()->fetchObject();
+	if(!$is_group){
+		db_insert('drupal_package_text_groups')
+			->fields(array(
+				'title' => $data['module_name'],
+				'machine_name' => $data['module_name']
+			))
+			->execute();
+	}
+	$is_text = db_select('drupal_package_text', 't')
+		->fields('t')
+		->condition('t.machine_name', $data['module_name'].'_'.$data['machine_name'])
+		->execute()->fetchObject();
+	if(!$is_text){
+		$text_data = array();
+		$language_default = language_default();
+		$ytnf = function_exists('ytnf_translate_text') ? TRUE : FALSE;
+		foreach(language_list() as $lang){
+	  		if(empty($lang->enabled)) continue;
+	  		if($ytnf && $language_default->language != $lang->language){
+	  			$lang_code = $language_default->language.'-'.$lang->language;
+	  			$text = ytnf_translate_text($data['text'], $lang_code, $language_default->language);
+	  			$text_data[$lang->language] = !empty($text) ? $text : $data['text'];
+	  		}else{
+	  			$text_data[$lang->language] = $data['text'];
+	  		}
+	  	}
+		db_insert('drupal_package_text')
+			->fields(array(
+				'title' => $data['machine_name'],
+				'machine_name' => $data['module_name'].'_'.$data['machine_name'],
+				'group_name' => $data['module_name'],
+				'data' => serialize($text_data)
+			))
+			->execute();
+	}
+}
+function drupal_package_text_update_form_page($form, &$form_state){
+	if(function_exists('ytnf_translate_text')){
+		$form['desc'] = array(
+  			'#type'   => 'item',
+  			'#markup' => t('Automatic creation of translations for all the empty text'),
+		);
+		$form['submit'] = array(
+			'#type'  => 'submit',
+			'#value' => t('Update'),
+		);
+	}else{
+		$form['mass'] = array(
+  			'#type'   => 'item',
+  			'#title'  => t('Error'),
+  			'#markup' => '<b style="color: red;">'.t('To automatically transfer you need to enable and configure the module "Yandex Translation Node Fields"').'</b>',
+		);
+	}
+	return $form;
+}
+function drupal_package_text_update_form_page_submit($form, &$form_state){
+	$ts = variable_get('drupal_package_text_t', array());
+	foreach ($ts as $module_name => $g_t){
+		foreach ($g_t as $machine_name => $text){
+			$row = array(
+				'module_name' => $module_name,
+				'machine_name' => $machine_name,
+				'text' => $text
+			);
+			drupal_package_text_cron_update_bd_json_add(serialize($row));
+		}
+	}
+	$language_default = language_default();
+	$langs = language_list();
+	$results = db_select('drupal_package_text', 't')
+		->fields('t')
+		->execute()->fetchAll();
+	foreach($results as $result){
+		$data = unserialize($result->data);
+		$d_text = '';
+		if(!empty($data[$language_default->language])){
+			$d_text = $data[$language_default->language];
+		}
+		if(empty($d_text)){
+			foreach($data as $d_lang => $d_text){
+				if(!empty($d_text)) break;
+			}
+		}
+		if(!empty($d_text)){
+			$update = FALSE;
+			foreach($data as $lang => $text){
+				if(!empty($text)) continue;
+				$update = TRUE;
+				$lang_code = $language_default->language.'-'.$lang;
+				$l_text = ytnf_translate_text($d_text, $lang_code, $language_default->language);
+	  			$data[$lang] = !empty($l_text) ? $l_text : $d_text;
+			}
+			foreach($langs as $lang){
+		  		if(!empty($data[$lang->language])) continue;
+		  		$lang_code = $language_default->language.'-'.$lang->language;
+	  			$l_text = ytnf_translate_text($d_text, $lang_code, $language_default->language);
+  				$data[$lang->language] = !empty($l_text) ? $l_text : $d_text;
+  				$update = TRUE;
+		  	}
+		}
+		if($update){
+			db_update('drupal_package_text')
+				->fields(array('data' => serialize($data)))
+				->condition('id', $result->id)
+				->execute();
+		}
+	}
+	drupal_set_message(t('The texts have been updated successfully'));
+}

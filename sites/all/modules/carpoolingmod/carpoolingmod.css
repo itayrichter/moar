@@ -1,0 +1,60 @@
+#carpoolingmod-pref-setup-form .form-item-type{
+float:left;
+}
+
+#carpoolingmod-pref-setup-form .form-item-type .form-item-type,
+body.rtl #carpoolingmod-pref-setup-form .form-item-type .form-item-type{
+float:none;
+}
+
+#type-div{
+float:left;
+}
+
+.clear-div{
+clear:both;
+}
+
+body.rtl #carpoolingmod-pref-setup-form .form-item-type{
+float:right;
+}
+
+body.rtl #type-div{
+float:right;
+}
+
+#type-div{
+padding: 20px 20px 0px 20px;
+}
+
+#type-div label{
+display:inline;
+}
+
+#type-div select{
+width:auto;
+}
+
+.fix-direction-ltr{
+direction: ltr;
+}
+
+.view-catalog .ui-sortable>.item-list>h3{
+cursor:move;
+}
+
+.view-catalog .ui-sortable>.item-list>h3>.handle{
+background: url(/misc/draggable.png) no-repeat scroll 6px 1px transparent;
+float: right;
+height: 15px;
+margin: 20px 10px 0px 10px;
+width: 20px;
+}
+
+.view-catalog .ui-sortable>.item-list>ul.ui-sortable .views-row{
+cursor:move;
+}
+
+.view-catalog .views-row .views-field-field-lesson-days{
+clear:both;
+}

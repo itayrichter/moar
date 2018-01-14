@@ -1,0 +1,89 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+    <style>
+        body {
+            margin: 0!important;
+            padding-top: 5px!important;
+            padding-bottom: 0px!important;
+            padding-left: 5px!important;
+            padding-right: 5px!important;
+
+            -webkit-user-select: none;
+            -moz-user-select: -moz-none;
+             -ms-user-select: none;
+             user-select: none;
+        }
+    </style>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    
+    <script type="text/javascript">
+        var pages = @ViewBag.Pages;
+        var key = '@Html.Raw(ViewBag.Key)';
+
+        $(document).ready(function() {
+           
+            for (var i = 0; i < pages; i++) {
+                var img = $("<img class='img-responsive'/>").attr("src", "/home/getimage?key="+encodeURIComponent(key) + "&page="+i);//loader.gif
+                $("#images").append(img);
+            }
+        });
+        function zoom(percent) {
+            $("#images").css("width", "" + percent + "%");
+        }
+        $(document).on({
+            "contextmenu": function (e) {
+
+                // Stop the context menu
+                e.preventDefault();
+            },
+        });
+    </script>
+</head>
+    <body>
+        @if (ViewBag.Pages == 0)
+        {
+            <span>לא ניתן להציג את הקובץ</span>
+        }
+        else
+        {
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="dropdown">
+                        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                            Zoom
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                            <li><a href="javascript:zoom(130)">130%</a></li>
+                            <li><a href="javascript:zoom(120)">120%</a></li>
+                            <li><a href="javascript:zoom(110)">110%</a></li>
+                            <li><a href="javascript:zoom(100)">100%</a></li>
+                            <li><a href="javascript:zoom(90)">90%</a></li>
+                            <li><a href="javascript:zoom(80)">80%</a></li>
+                            <li><a href="javascript:zoom(70)">70%</a></li>
+                            <li><a href="javascript:zoom(60)">60%</a></li>
+                            <li><a href="javascript:zoom(50)">50%</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="panel-body center-block" style="text-align: center">
+                    <div id="images" style="width:100%" class="center-block"></div>
+                </div>
+            </div>
+            
+        }
+
+        
+    </body>
+</html>

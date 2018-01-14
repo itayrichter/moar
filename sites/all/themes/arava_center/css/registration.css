@@ -1,0 +1,403 @@
+// #edit-submit.processing{
+//     -webkit-transition: none;
+//     -moz-transition: none;
+//     -ms-transition: none;
+//     -o-transition: none;
+//     transition: none;
+//     background-image:  url("../Images/loader-15-dark.gif");
+//     background-repeat: no-repeat;
+//     background-position: 13px center;
+//     padding-left: 20px;
+// }
+// #edit-submit.processing:hover{
+//     background-image:  url("../Images/loader-15-light.gif");
+// }
+// .ui-dialog .ui-dialog-content.loading,
+// .takanon-text.loading{
+//     background:  url("../Images/loader.gif") no-repeat center center;
+// }
+
+/****
+Presence
+*******/
+#edit-arrival-time,
+#edit-departure-time {
+    width: 100px;
+}
+
+/****
+Tatakanon popups
+****/
+.ui-dialog iframe{
+    width: 592px !important;
+    padding: 0 !important;
+}
+.takanon-text {
+    height: 300px;
+    overflow-y: scroll;
+}
+.text-field-wrapper {
+    position: absolute;
+    bottom: 0;
+}
+.text-field-wrapper .form-text {
+    width: 150px!important;
+    margin-left: 10px;
+}
+.agree-error {
+    color: red;
+    display: inline-block;
+    margin: 0 5px;
+}
+// .agree.processing{
+//     background-image:  url("../Images/loader-15-light.gif");
+//     background-repeat: no-repeat;
+//     background-position: 1px center;
+//     padding-left: 20px;
+// }
+// .agree.processing:hover {
+//     background-image:  url("../Images/loader-15-dark.gif");
+// }
+
+.page-registration-course .ui-dialog-titlebar .ui-state-default .ui-icon, .page-registration-extra .ui-dialog-titlebar .ui-state-default .ui-icon{
+    
+    background-image: url(/sites/all/modules/jquery_update/replace/ui/themes/base/minified/images/ui-icons_888888_256x240.png)!important;
+}
+#healthform-mainform {
+    padding: 0 10px;
+}
+#healthform-mainform .ajax-progress {
+    position: fixed;
+    top: 100px;
+    left: 0;
+    width: 140px;
+}
+
+/*wizard menu*/
+#block-arava-registration-registration-steps{
+    
+}
+    #block-arava-registration-registration-steps ul{
+        list-style-type: none;
+        padding:0;
+    }
+        #block-arava-registration-registration-steps ul li{
+            float:right;
+            background-color: #2a68af;
+            line-height: 50px;
+            height: 50px;
+            padding-left: 25px;
+            background-image: url(../Images/arrow_left.png);
+            background-repeat: no-repeat;
+        }
+        #block-arava-registration-registration-steps ul li[class*="active"]{
+            background-color: #7ab8ff;
+        }
+            #block-arava-registration-registration-steps ul li a,
+            #block-arava-registration-registration-steps ul li span {
+                color:#ffffff!important;
+                line-height: 50px;
+                font-size: 18px;
+                background-image: url("../Images/arrow_right.png");
+                background-position: right top;
+                background-repeat: no-repeat;
+                display: block;
+                height: 100%;
+                padding-right: 35px;
+                width: 100%;
+            }
+            #block-arava-registration-registration-steps ul li span {
+                color: #bbbbbb;
+            }
+            #block-arava-registration-registration-steps ul li a[class*="active"]{
+                color:#1E1E1E;
+            }
+            #block-arava-registration-registration-steps ul li a:hover{
+                text-decoration: none;
+            }
+            
+        .block-arava-registration .courses{ background-color: #7ab8ff!important}
+        .block-arava-registration .accommodation{ background-color: #4DE4B7!important}
+        .block-arava-registration .presence{ background-color: #E0E014!important}
+        .block-arava-registration .meals{ background-color: #FC9300!important}
+        .block-arava-registration .extra{ background-color: #F56767!important}
+        .block-arava-registration .payment{ background-color: #B48DF7!important}
+        .block-arava-registration .carpoolingpref{ background-color: #B48DF7!important}
+        
+        .block-arava-registration .active{
+            font-weight: bold;
+            text-decoration: underline;
+            color:#1e1e1e;
+        }
+        
+/****
+Course selection
+****/
+.view-course-selection .lesson-times {
+    display: none;
+}
+.view-course-selection .form-type-checkbox {
+    float: right;
+    margin-top:1px;
+}
+.view-course-selection .views-row{
+    float: right;
+    margin-right: 10px;
+}
+.view-course-selection .views-field-field-teacher .views-label-field-teacher{
+    float:right;
+}
+.view-course-selection .views-field-field-teacher .field-content{
+    float:right;
+    margin-right: 10px;
+}
+.view-course-selection .views-field-field-faculty{
+    display: none;
+}
+
+.ui-accordion fieldset.ui-accordion-content {
+    padding: 5px 0;
+}
+.all-courses .fieldset-wrapper > .form-wrapper {
+    margin: 5px 0;
+}
+.ui-accordion.all-courses .ui-accordion-header {
+    font-size: 16px;
+    background: #b63e3d;
+    padding: 7px;
+    color: #fff;
+}
+.all-courses .ui-state-default .ui-icon:after {
+    line-height: 39px;
+}
+.view-course-selection .all-courses{
+    margin-bottom: 10px;
+}
+.view-course-selection .pager li a{
+    color:#f56767!important;
+    font-size: 16px!important;
+}
+/*accommodation*/   
+.view-accomodation-selection{
+    width:100%;
+    float: right;
+    clear:both;
+}
+#edit-accomodations .form-item-accomodations{
+    float: right;
+    clear: both;
+    width:900px;
+    border:1px solid #2a68af;
+}
+#edit-accomodations .form-item-accomodations:hover{
+    background-color: #7ab8ff;
+}
+#edit-accomodations .form-radio{
+    float: right;
+    margin-top: 32px;
+    margin-right: 10px;
+}
+#edit-accomodations .option{
+    float: right;
+    margin-right: 10px;
+}
+.form-item-roommates {
+    clear: both;
+    width: 900px;
+    padding-top: 30px
+}
+.views-field-field-price span, .views-field-field-price div{
+    float:right;
+}
+.views-field-field-price div{
+    margin-right: 10px;
+}
+.my-timetable-block .pager li > a, .my-timetable-block .pager li > span{
+    background: none;
+}
+.calendar-calendar th.days{
+    color:#ffffff;
+}
+/**
+Meals
+*/
+
+#edit-food,
+#edit-food-allergies {
+    border: none;
+    margin-bottom: 0;
+    margin-top: 0;
+    padding: 0;
+}
+
+/**
+Timetable
+**/
+.my-timetable-block .view-calendar ,
+.page-semester-timetable .view-calendar {
+    display: none;
+}
+.my-timetable-block .view-calendar:first-child ,
+.page-semester-timetable .view-calendar:first-child {
+    display: block;
+}
+
+.view-course-selection .horizontal-tabs,
+.view-course-selection .all-courses{
+    float: right;
+    width: 570px;
+}
+.my-timetable-block {
+    width: 500px;
+    float: left;
+    clear: left;
+    position: relative;
+}
+#arava-registration-course .form-submit {
+    display: block;
+    clear: both;
+}
+.my-timetable-block .view .date-nav-wrapper .date-heading ,
+.page-semester-timetable .view .date-nav-wrapper .date-heading {
+    text-align: left;
+}
+.my-timetable-block .item-list ul.pager ,
+.page-semester-timetable .item-list ul.pager {
+    margin: 0;
+}
+.my-timetable-block .calendar-calendar div.title ,
+.page-semester-timetable .calendar-calendar div.title {
+    font-size: 10px;
+}
+.my-timetable-block .hours ,
+.page-semester-timetable .hours {
+    font-size: 9px;
+}
+.my-timetable-block .month.day,
+.page-semester-timetable .month.day {
+    font-size: 10px;
+}
+.my-timetable-block .calendar-calendar .month-view .full td.single-day div.monthview ,
+.page-semester-timetable .calendar-calendar .month-view .full td.single-day div.monthview {
+    overflow: visible;
+}
+.colored-item{
+    position: relative;
+}
+.my-timetable-block .calendar-calendar .month-view .full td.single-day .inner .colored-item div.calendar-popup,
+.my-timetable-block .calendar-calendar .month-view .full td .inner div.calendar.monthview .colored-item div.calendar-popup,
+.page-semester-timetable .calendar-calendar .month-view .full td.single-day .inner .colored-item div.calendar-popup,
+.page-semester-timetable .calendar-calendar .month-view .full td .inner div.calendar.monthview .colored-item div.calendar-popup{
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    width: 200px;
+    background: white;
+    border: 1px solid gray;
+    padding: 20px;
+}
+.my-timetable-block .colored-item .calendar-popup .title a,
+.my-timetable-block .colored-item .calendar-popup .hours,
+.page-semester-timetable .colored-item .calendar-popup .title a,
+.page-semester-timetable .colored-item .calendar-popup .hours {
+    font-size: 16px;
+    text-align: center;
+}
+.my-timetable-block .calendar-calendar .month-view .full td.single-day .inner .item:hover div.calendar-popup,
+.my-timetable-block .calendar-calendar .month-view .full td .inner .item:hover div.calendar.monthview div.calendar-popup,
+.page-semester-timetable .calendar-calendar .month-view .full td.single-day .inner .item:hover div.calendar-popup,
+.page-semester-timetable .calendar-calendar .month-view .full td .inner .item:hover div.calendar.monthview div.calendar-popup {
+    display: block;
+}
+
+.calendar-loader {
+    z-index: 100;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background:  rgba(255, 255, 255, 0.85) url("../Images/loader.gif") no-repeat center 100px;
+    width: 100%;
+    height: 100%;
+}
+.view .date-nav-wrapper .date-next {
+    border-radius: 5px 0 0 5px;
+    left: auto;
+    right: 60px;
+    background: none;
+}
+.view .date-nav-wrapper .date-prev {
+    border-radius: 0 5px 5px 0;
+    right: 0;
+    background: none;
+}
+/* timetable print version */
+.page-my-timetable #main-content {
+    padding: 0;
+}
+.page-my-timetable .pager {
+    display: none;
+}
+.page-my-timetable .calendar-calendar .month-view .full td.single-day div.monthview {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+}
+.page-my-timetable .colored-item > .title,
+.page-my-timetable .colored-item > .hours {
+    display: none;
+}
+.page-my-timetable .calendar-calendar div.calendar,
+.page-my-timetable .calendar-calendar div.title {
+    font-size: 14px;
+    text-align: center;
+}
+#content a:link:after, #content a:visited:after {
+    content: "";
+}
+
+@media print{
+    .view-calendar {
+        page-break-after: always;
+    }
+    .view-calendar:last-child {
+        page-break-after: auto;
+    }
+    .print-link {
+        display: none;
+    }
+}
+.timetable-print {
+    float: left;
+    width: 500px;
+}
+.edit-my-semester-block,
+.remaining-payment-block,
+.my-messages-block,
+.profile,
+.assignments-to-check-block{
+    border: 1px solid #CFD0D2;
+    width: 570px;
+    padding: 20px;
+    margin-bottom: 10px;
+    clear: none;
+}
+
+.profile .field-type-text{
+    overflow: hidden;
+    clear:right;
+}
+.profile .field-label{
+    float: right;
+    width:150px;
+}
+.profile .field-items{
+    float: right;
+}
+.pay-up {
+    color: red;
+}
+#arava-registration-confirmation{
+    font-weight: bold;
+    color: #DD0000;
+}

@@ -1,0 +1,8 @@
+name = Mymodule
+description = Другие функции
+core = 7.x
+package = MU
+version = "7.x-1.0"
+core = "7.x"
+project = "m_up"
+datestamp = "1329972942"

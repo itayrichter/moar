@@ -1,0 +1,5 @@
+name = Drupal package google API KEY
+package = Drupal package
+core = 7.x
+version = "7.x-1.0 beta"
+configure = admin/config/gkey

@@ -1,0 +1,14 @@
+// #admin-menu{
+// 	display: none !important;
+// }
+// html body.admin-menu{
+// 	margin-top: 0 !important;
+// }
+// div#admin-toolbar div.admin-tab,
+// #admin-toolbar a {
+// 	height: auto !important;
+// }
+
+.l10n-client #admin-menu .dropdown li ul{
+    right: auto !important;
+}

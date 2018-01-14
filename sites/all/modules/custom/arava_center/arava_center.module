@@ -1,0 +1,597 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ * @return mixed
+ */
+function arava_center_menu() {
+
+  // login/personal area link
+  $items['personal-area'] = array(
+    'title' => t('Personal Area'),
+    'title callback' => 'arava_center_personal_area_title',
+    'page callback' => 'arava_center_personal_area_callback',
+    'type' => MENU_NORMAL_ITEM,
+    'access callback' => true,
+    'menu_name' => 'main-menu',
+  );
+
+  $items['arava-front'] = array(
+    'title' => '',
+    'page callback' => 'arava_center_front_page',
+    'type' => MENU_CALLBACK,
+    'access callback' => true,
+  );
+
+  // arg1 = type: mp3 / swf
+  $items['file-view/%/%node/%'] = array(
+    'title' => '',
+    'page callback' => 'arava_center_view_only_file',
+    'page arguments' => array(2,3),
+    'type' => MENU_CALLBACK,
+    'access callback' => true,
+  );
+
+  return $items;
+}
+
+function arava_center_front_page() {
+  drupal_set_title(t('Welcome to Arava Spiritual Center'));
+  return '';
+}
+
+function arava_center_personal_area_title() {
+  if (user_is_logged_in()) {
+    return t('Personal Area');
+  }
+  else {
+    return t('Students Login');
+  }
+}
+
+function arava_center_personal_area_callback() {
+  drupal_goto('user');
+}
+
+function arava_center_init() {
+  if (arg(0) == "animals") {
+    $path = drupal_get_path('module', 'arava_center');
+    drupal_add_js($path . '/js/arava_center.js');
+    drupal_add_library('system', 'ui.accordion');
+  }
+  if(arg(0)== "courses-archive"){
+    $path = drupal_get_path('module', 'arava_center');
+    drupal_add_js($path . '/js/arava_center.js');
+  }
+}
+
+/**
+ * Implements hook_node_presave($node)
+ * @param $node
+ */
+function arava_center_node_presave($node) {
+	if ($node->type == 'course') {
+		// update lesson_times form the information in lesson_days and lesson_hours, mixed up with the semester dates.
+		// only do this if:
+				// 1. times are empty and days+lessons are full
+		if (((empty($node->field_lesson_times) || empty($node->field_lesson_times[LANGUAGE_NONE])) && !empty($node->field_lesson_days) && !empty($node->field_lesson_hours))
+				// 2. days or lessons have changed
+				|| (isset($node->original) && ($node->original->field_lesson_days != $node->field_lesson_days ||
+						$node->original->field_lesson_hours[LANGUAGE_NONE][0]['value'] != $node->field_lesson_hours[LANGUAGE_NONE][0]['value'] ||
+					  $node->original->field_lesson_hours[LANGUAGE_NONE][0]['value2'] != $node->field_lesson_hours[LANGUAGE_NONE][0]['value2']))) {
+
+			// get the semester dates
+			$course_wrapper = entity_metadata_wrapper('node', $node);
+			$semester_dates = $course_wrapper->field_semester->field_semester_dates->value();
+			$semester_starts = $semester_dates['value'];
+			$semester_ends = $semester_dates['value2'];
+
+			// generate the lesson dates
+			$lessons = array();
+			foreach ($node->field_lesson_days[LANGUAGE_NONE] as $day) {
+				$lesson_day = strtotime("this " . $day['value'], $semester_starts);
+				while ($lesson_day < $semester_ends) {
+					$lesson_starts = $lesson_day + $node->field_lesson_hours[LANGUAGE_NONE][0]['value'];
+					$lesson_ends = $lesson_day + $node->field_lesson_hours[LANGUAGE_NONE][0]['value2'];
+					$lessons[$lesson_starts] = array(
+						'value' => $lesson_starts,
+						'value2' => $lesson_ends,
+					);
+
+					$lesson_day = strtotime("this " . $day['value'], $lesson_day + 60*60*24*7);
+				}
+			}
+			ksort($lessons);
+			// save the lesson dates
+			$node->field_lesson_times[LANGUAGE_NONE] = array_values($lessons);
+
+			// set the lesson times type to recurring:
+			$node->field_lesson_times_type[LANGUAGE_NONE][0]['value'] = 'recurring';
+		}
+
+		// if a change was made to the manual times, set the lesson times type to manual:
+		else {
+
+			if(isset($node->original) && $node->original){
+				$old_times = array();
+				foreach ($node->original->field_lesson_times[LANGUAGE_NONE] as $time) {
+					$old_times[$time['value']] = array($time['value'], $time['value2']);
+				}
+				ksort($old_times);
+
+				$new_times = array();
+				foreach ($node->field_lesson_times[LANGUAGE_NONE] as $time) {
+					$new_times[$time['value']] = array($time['value'], $time['value2']);
+				}
+				ksort($new_times);
+
+				if ($old_times != $new_times) {
+					$node->field_lesson_times_type[LANGUAGE_NONE][0]['value'] = 'manual';
+				}
+			}
+		}
+	}
+}
+
+/**
+ * Implements hook_form_alter
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function arava_center_form_alter(&$form, &$form_state, $form_id) {
+	// open the right fieldset for lesson time, according to lesson_times_type
+	if (!empty($form['field_lesson_times_type']) && $form['field_lesson_times_type'][LANGUAGE_NONE]['#default_value'] == 'manual') {
+		$form['#groups']['group_recurring']->format_settings['formatter'] = 'closed';
+		$form['#groups']['group_manual']->format_settings['formatter'] = 'open';
+	}
+
+  if ($form_id == 'user_profile_form' || $form_id == 'user_register_form') {
+    global $user;
+    $user = user_load($user->uid);
+    if (!user_access('administer users')) {
+      $form['field_dairy']['#access'] = false;
+      $form['field_gluten']['#access'] = false;
+      $form['field_soy']['#access'] = false;
+      $form['field_other_allergies']['#access'] = false;
+      $form['field_peanuts']['#access'] = false;
+      $form['field_i_eat_dairy']['#access'] = false;
+      $form['field_i_eat_eggs']['#access'] = false;
+      $form['field_guest']['#access'] = false;
+      $form['ckeditor']['#access'] = false;
+      $form['timezone']['#access'] = false;
+      $form['locale']['#access'] = false;
+      $form['mimemail']['#access'] = false;
+
+      unset($form['#groups']);
+      unset($form['#fieldgroups']);
+      unset($form['#group_children']);
+    }
+  }
+
+  if ($form_id == 'user_register_form') {
+    $form['#submit'][] = '_arava_center_user_register_submit';
+  }
+
+  // only allow editing of semester in hebrew - for the "approved for accomodation" emails' sake
+  if ($form_id == 'semester_node_form') {
+    global $language;
+    if ($language->language != 'he') {
+      $form['#access'] = false;
+      $languages = language_list();
+      $hebrew = $languages['he'];
+      drupal_set_message(t('You may only add and edit semesters in hebrew (because of the emails sent when approving accommodation payment).
+                            Go here for hebrew: @link', array('@link' => url($_GET['q'], array('absolute' => true, 'language' => $hebrew)))), 'warning');
+    }
+  }
+}
+
+function _arava_center_user_register_submit($form, &$form_state) {
+  $form_state['redirect'] = 'register-thanks';
+}
+
+/**
+ * Implements hook_block_info
+ * @return mixed
+ */
+function arava_center_block_info() {
+  $blocks['hello_user'] = array(
+    'info' => t('Hello User'),
+  );
+
+  $blocks['course_files'] = array(
+    'info' => t('Course Files'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view
+ * @param string $delta
+ * @return mixed
+ */
+function arava_center_block_view($delta = '') {
+  switch ($delta) {
+    case 'hello_user':
+      $block['subject'] = null;
+      $block['content'] = _arava_center_hello_user_block();
+      break;
+
+    case 'course_files':
+      $block['subject'] = null;
+      $block['content'] = _arava_center_course_files();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_page_build
+ * @param $page
+ */
+function arava_center_page_build(&$page) {
+  $node = menu_get_object('node');
+  if (!empty($node) && $node->type == 'course' && arg(2) == null) {
+    $block = module_invoke('arava_center', 'block_view', 'course_files');
+    $blocks['course_files'] = array(
+      '#markup' => $block['content'],
+      '#weight' => 10,
+    );
+    $page['content'] = array_merge($page['content'], $blocks);
+  }
+}
+
+function _arava_center_has_public($node, $fieldid){
+	if(isset($node->{$fieldid}['und'][0]['value']) && $node->{$fieldid}['und'][0]['value']){
+		foreach($node->{$fieldid}['und'] as $row){
+			$item = field_collection_item_load($row['value']);
+			
+			if(isset($item->field_make_public['und'][0]['value']) && $item->field_make_public['und'][0]['value']){
+				return true;
+			}
+		}
+
+	}
+	
+	return false;
+}
+
+/**
+ * Callback for course_files block.
+ */
+function _arava_center_course_files() {
+  $node = menu_get_object('node');
+  // only for course pages
+  if (!empty($node) && $node->type == 'course') {
+    $private = false;
+	if (!_arava_center_user_has_access_to_files($node)) {
+      $private = true;
+    }
+    // get the file tables
+    $output = '';
+	
+	global $user;
+	if($user->uid){
+		$output .= _arava_registration_generate_view('files_for_course', 'block_1', array($node->nid));
+		$output .= _arava_registration_generate_view('files_for_course', 'block', array($node->nid));
+		$output .= _arava_registration_generate_view('files_for_course', 'block_2', array($node->nid));
+		$output .= _arava_registration_generate_view('files_for_course', 'block_3', array($node->nid));
+	}else{
+		if($private){
+			if(_arava_center_has_public($node, 'field_audio_files_comp')){
+				$output .= _arava_registration_generate_view('files_for_course_public', 'block_1', array($node->nid));
+			}
+			
+			if(_arava_center_has_public($node, 'field_pdf_files_comp')){
+				$output .= _arava_registration_generate_view('files_for_course_public', 'block', array($node->nid));
+			}
+			
+			if(_arava_center_has_public($node, 'field_tamlil_files_comp')){
+				$output .= _arava_registration_generate_view('files_for_course_public', 'block_2', array($node->nid));
+			}
+			
+			if(_arava_center_has_public($node, 'field_videos_files_comp')){
+				$output .= _arava_registration_generate_view('files_for_course_public', 'block_3', array($node->nid));
+			}
+		}else{
+			$output .= _arava_registration_generate_view('files_for_course', 'block_1', array($node->nid));
+			$output .= _arava_registration_generate_view('files_for_course', 'block', array($node->nid));
+			$output .= _arava_registration_generate_view('files_for_course', 'block_2', array($node->nid));
+			$output .= _arava_registration_generate_view('files_for_course', 'block_3', array($node->nid));
+		}
+	}
+	
+
+    return $output;
+  }
+}
+
+function arava_center_link_to_file($data, $view) {
+	if(!isset($data->field_field_file[0]['raw'])){
+		return;
+	}
+
+  $file = $data->field_field_file[0]['raw'];
+  $node = node_load($view->args[0]);
+  $restricted = !empty($node->field_files_restricted) && $node->field_files_restricted[LANGUAGE_NONE][0]['value'] == 1;
+  
+  if($restricted && isset($data->field_field_make_public[0]['raw']['value']) && $data->field_field_make_public[0]['raw']['value']){
+	$restricted = false;
+  }
+  
+  $type = 'other';
+  if ($restricted) {
+    switch ($file['filemime']) {
+      case 'application/x-shockwave-flash':
+        $type = 'swf';
+        break;
+      case 'application/pdf':
+        $type = 'swf';
+        break;
+      case 'audio/mpeg':
+        $type = 'mp3';
+        break;
+	  case 'video/mp4':
+        $type = 'mp4';
+        break;
+    }
+  }
+
+  if ($type == 'other') {
+    print l($file['description'], file_create_url($file['uri']), array('attributes' => array('target' => '_blank')));
+  }
+  else {
+    print l($file['description'], 'file-view/'.$type.'/'.$node->nid.'/'.$file['fid'], array('attributes' => array('target' => '_blank')));
+  }
+}
+
+function _arava_center_user_has_access_to_files($node) {
+	if(user_access('access all course')){
+		return true;
+	}
+
+  $restricted = !empty($node->field_files_restricted) && $node->field_files_restricted[LANGUAGE_NONE][0]['value'] == 1;
+  // if restricted, check that user has access
+  if ($restricted) {
+    if (!_user_signed_up_to_course($node->nid)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function _arava_center_get_file_date($data) {
+  if (!empty($data->field_field_file)) {
+    $timestamp = $data->field_field_file[0]['raw']['timestamp'];
+    return date('d.m.Y', $timestamp);
+  }
+  return null;
+}
+
+function _arava_center_get_file_size($data){
+  if (!empty($data->field_field_file)) {
+    $size = $data->field_field_file[0]['raw']['filesize'];
+    $pretty_size = round($size/1024);
+    $suffix = 'KB';
+    if ($pretty_size > 1024) {
+      $pretty_size = round($size/(1024*1024));
+      $suffix = 'MB';
+    }
+    return $pretty_size . $suffix;
+  }
+  return null;
+}
+
+function arava_center_view_only_file($node, $fid) {
+  if (!is_object($node) || !is_numeric($fid)) return;
+  if (!_arava_center_user_has_access_to_files($node)) {
+    drupal_set_message(t('This file is restricted to students who are signed up to the course.'), 'error');
+    return '';
+  }
+
+  $show_file = false;
+  if (isset($_COOKIE['moar_file_restriction'])) {
+    $cookie = $_COOKIE['moar_file_restriction'];
+    if ($cookie == $fid) {
+      $show_file = true;
+    }
+  }
+
+  global $user;
+  //if($user->uid == 56){
+  //    $show_file = true;
+  //}
+  
+  if ($show_file) {
+    $course_wrp = entity_metadata_wrapper('node', $node);
+    $teacher_name = $course_wrp->field_teacher->title->value();
+    $course_name = $course_wrp->title->value();
+
+    $file = file_load($fid);
+    $file_url = file_create_url($file->uri);
+    $file_mime = $file->filemime;
+
+    // tell the difference between audio/mp3, swf. blank page for anything else.
+
+    $path=drupal_get_path("module", "arava_center");
+    // MP3:
+    if ($file_mime == 'audio/mpeg') {
+      drupal_add_js($path."/soundmanager/script/soundmanager2-jsmin.js");
+      drupal_add_js($path."/soundmanager/script/bar-ui.js");
+      drupal_add_css($path."/soundmanager/css/bar-ui.css");
+      return theme('mp3_player', array(
+        "file" => $file_url,
+        "teacher_name" => $teacher_name,
+        "course_name" => $course_name,
+      ));
+    }
+    // SWF:
+    elseif ($file_mime == 'application/x-shockwave-flash') {
+      drupal_add_js('//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js', 'external');
+      return theme('flash_pdf', array(
+        'file' => $file_url,
+        'file_mime'=>$file_mime,
+      ));
+    
+    }
+    elseif ($file_mime == 'application/pdf') {
+      return theme('flash_pdf', array(
+        'file' => $file_url,
+        'file_mime'=>$file_mime,
+      ));
+    
+    }
+    // MP4:
+    elseif ($file_mime == 'video/mp4') {
+		drupal_add_js('http://vjs.zencdn.net/ie8/1.1.1/videojs-ie8.min.js', 'external');
+		drupal_add_css('http://vjs.zencdn.net/5.4.4/video-js.css', array('type' => 'external'));
+
+		$html = '<video id="my-video" class="video-js vjs-default-skin vjs-big-play-centered" autoplay="autoplay" controls preload="auto" width="100%" height="600" data-setup="{}">
+    <source src="'.$file_url.'" type="video/mp4">
+    <p class="vjs-no-js">
+      To view this video please enable JavaScript, and consider upgrading to a web browser that
+      <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+    </p>
+  </video>';
+		
+      return $html;
+    }
+    else {
+      return '';
+    }
+  }
+  // request password before showing file
+  else {
+    $form = drupal_get_form('arava_center_view_only_file_form');
+    return drupal_render($form);
+  }
+}
+
+function arava_center_view_only_file_form($form, &$form_state) {
+  $form['password'] = array(
+    '#type' => 'password',
+    '#title' => t('Please re-enter your password to this site to view this file:'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Continue'),
+  );
+
+  return $form;
+}
+
+function arava_center_view_only_file_form_submit($form, &$form_state) {
+  $password = $form_state['values']['password'];
+  global $user;
+  require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+  $match = user_check_password($password, $user);
+  if ($match) {
+    setcookie('moar_file_restriction', arg(3), time()+60);
+  }
+}
+
+
+function arava_center_theme()
+{
+  $path = drupal_get_path('module', 'arava_center');
+  return array(
+    'mp3_player' => array(
+      "path" => $path,
+      'template' => 'templates/mp3',
+      "variables" => array(
+        "teacher_name" => "",
+        "course_name" => "",
+        "file" => "")
+    ),
+    'flash_pdf' => array(
+      "path" => $path,
+      'template' => 'templates/pdf',
+      "variables" => array(
+        "file" => "")
+    ),
+  );
+}
+
+
+
+function _arava_center_hello_user_block() {
+  global $user;
+  $user = user_load($user->uid);
+  $username = t('Guest');
+  if ($user->uid != 0) {
+    $username = $user->field_user_name[LANGUAGE_NONE][0]['value'];
+  }
+  return t('Hello, @you', array('@you' => $username));
+}
+
+function arava_center_animals_breadcrumb($view) {
+  $tid = $view->args[0];
+  if ($tid == 0) {
+    return '';
+  }
+  $parents = taxonomy_get_parents_all($tid);
+  $breadcrumbs = array();
+  foreach ($parents as $parent) {
+    $breadcrumbs[$parent->tid] = $parent->name;
+  }
+  $breadcrumbs['0'] = t('Animals in the Area');
+  $breadcrumbs = array_reverse($breadcrumbs, true);
+  foreach ($breadcrumbs as $key => &$crumb) {
+    $crumb = l($crumb, 'animals-in-area/' . $key, array('absolute' => true));
+  }
+
+  return '<div class="animals-breadcrumbs">' . implode(' > ', $breadcrumbs ) . '</div>' ;
+}
+
+function arava_center_animals_term_description($view) {
+  $tid = $view->args[0];
+  if ($tid == 0) {
+    return '';
+  }
+  $term = taxonomy_term_load($tid);
+  if (!empty($term)) {
+    print '<div class="animals-description">' . $term->description . "</div>";
+  }
+}
+
+/**
+ * @todo: remove this once we use the compound fields.
+ * Implements hook_preprocess_node
+ * @param $vars
+ */
+function arava_center_preprocess_node(&$vars) {
+  if ($vars['type'] == 'course') {
+    $restricted = !empty($vars['field_files_restricted']) && $vars['field_files_restricted'][LANGUAGE_NONE][0]['value'] == 1;
+    if ($restricted) {
+//      $GLOBALS['conf']['cache'] = FALSE;
+      $restricted_fields = array(
+        'field_audio_files',
+        'field_pdf_files',
+      );
+      foreach ($restricted_fields as $field) {
+        if (!empty($vars[$field]) && !_user_signed_up_to_course($vars['nid'])) {
+          unset($vars['content'][$field]);
+        }
+      }
+    }
+  }
+}
+
+function _user_signed_up_to_course($course_id) {
+  global $user;
+  module_load_include('inc', 'arava_center', 'AravaCenterDbApi.class');
+  $dbApi = new AravaCenterDbApi();
+  $signup = $dbApi->isUserSignedUpToCourse($user->uid, $course_id);
+  
+  if($signup){
+	$curaccount = user_load($user->uid);
+	if(isset($curaccount->field_has_secured_access[LANGUAGE_NONE][0]['value']) && $curaccount->field_has_secured_access[LANGUAGE_NONE][0]['value']){
+		return true;
+	}
+  }
+  
+  return false;
+}

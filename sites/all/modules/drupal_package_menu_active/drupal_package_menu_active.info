@@ -1,0 +1,6 @@
+name = Drupal package menu active
+description = Add menu item active rules
+package = Drupal package
+core = 7.x
+
+version = "7.x-2.0-dev"

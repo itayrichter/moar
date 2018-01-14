@@ -1,0 +1,361 @@
+<?php
+
+function gradereg_init() {
+/*
+	if(isset($_GET['testrun']) && $_GET['testrun'] == 'test'){
+		$query = db_query("select nid from {node} where type='course' and status='1'");
+		foreach($query as $r){
+			$nid = $r->nid;
+			$node = node_load($nid);
+			$node->field_show_in_archive['und'][0]['value'] = 1;
+			node_save($node);
+			var_dump($nid);
+		}
+		var_dump('done');
+		die;
+	}
+*/
+
+	drupal_add_library('system', 'ui.accordion');
+}
+
+/**
+ * @file
+ * Provides a views style plugin for FullCalendar
+ */
+
+function gradereg_menu() {
+  $items = array();
+
+  $items['node/%node/grades'] = array(
+    'title' => t('Course Student Grades'),
+    'page callback' => 'gradereg_node_grades_list',
+    'page arguments' => array(1),
+    'access callback' => 'gradereg_node_grades_list_access',
+    'access arguments' => array(1),
+    'file' => 'gradereg.pages.php',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['user/%user/grades'] = array(
+    'title' => t('Course Grades'),
+    'page callback' => 'gradereg_user_grades_list',
+    'page arguments' => array(1),
+    'access callback' => 'gradereg_user_grades_list_access',
+    'access arguments' => array(1),
+    'file' => 'gradereg.pages.php',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['user/%user/send-complement'] = array(
+    'title' => t('Send Complement'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gradereg_send_complement_form', 1),
+    'access callback' => 'user_access',
+    'access arguments' => array('send complement'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['node/%node/grades/edit/%user'] = array(
+    'title' => t('Edit Student Course Grades'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gradereg_edit_grade', 1, 4),
+    'access callback' => 'gradereg_edit_grade_access',
+    'access arguments' => array(1, 4),
+    'file' => 'gradereg.pages.php',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/people/grade-courses'] = array(
+    'title' => t('Grade Courses'),
+    'page callback' => 'gradereg_course_list',
+    'access callback' => 'user_access',
+    'access arguments' => array('grade management'),
+    'file' => 'gradereg.admin.php',
+  );
+
+  $items['admin/people/grade-courses/%node/export'] = array(
+    'title' => t('Export Grade Courses'),
+    'page callback' => 'gradereg_course_export',
+    'page arguments' => array(3),
+    'access callback' => 'user_access',
+    'access arguments' => array('grade management'),
+    'file' => 'gradereg.admin.php',
+    'type' => MENU_CALLBACK,
+  );
+  
+    $items['admin/config/courses-archive-content'] = array(
+      'title' => t('Courses Archive'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('gradereg_courses_archive_content'),
+      'access arguments' => array('administer site configuration'),
+      'access callback' => 'user_access',
+    );
+  
+    $items['courses-archive'] = array(
+      'page callback' => 'gradereg_courses_archive',
+      'access callback' => true,
+    );
+	
+    $items['teachings'] = array(
+      'page callback' => 'gradereg_teachings_page',
+      'access callback' => true,
+    );
+  
+  
+  return $items;
+}
+
+function gradereg_teachings_page(){
+	$val = variable_get('gradereg_courses_archive_content', array('format' => 'filtered_html', 'value' => ''));
+	
+	return check_markup($val['value'], $val['format']);
+}
+
+function gradereg_courses_archive(){
+	
+
+	drupal_goto('teachings');
+	exit();
+}
+
+function gradereg_node_view($node, $view_mode, $langcode) {
+  if($node->type == 'course' && $view_mode == 'full'){
+	$semester = (isset($node->field_semester['und'][0]['target_id']) && $node->field_semester['und'][0]['target_id']) ? node_load($node->field_semester['und'][0]['target_id']) : false;
+	$open = (isset($semester->field_open_for_registration['und'][0]['value']) && $semester->field_open_for_registration['und'][0]['value']) ? true : false;
+	$show_archive = (isset($semester->field_show_in_archive['und'][0]['value']) && $semester->field_show_in_archive['und'][0]['value']) ? true : false;
+	
+	//var_dump($node->content);
+	
+	if(!$open || $show_archive){
+		//unset($node->content['field_teacher']);
+		unset($node->content['field_lesson_days']);
+		unset($node->content['field_lesson_hours']);
+		unset($node->content['field_classroom']);
+	}
+  }
+}
+
+function gradereg_courses_archive_content($form, &$form_state){
+	$val = variable_get('gradereg_courses_archive_content', array('format' => 'filtered_html', 'value' => ''));
+	
+    $form['gradereg_courses_archive_content'] = array(
+		'#title' => 'Courses Archive Page Content',
+		'#type' => 'text_format',
+		'#format' => $val['format'],
+		'#default_value' => $val['value'],
+	);
+	
+    return system_settings_form($form);
+}
+
+function gradereg_send_complement_form($form, &$form_state, $account){
+	$form_state['storage']['uid'] = $account->uid;
+
+	module_load_include('inc', 'arava_registration', 'MySemesterAPI.class');
+	$mySemesterAPI = new MySemesterAPI();
+	$current_semester_id = $mySemesterAPI->getSemesterId();
+	
+	if(!$current_semester_id){
+		$current_semester_id = db_query("select nid from {node} where type='semester' order by nid desc limit 0,1")->fetchField();
+	}
+	
+	$query = db_query(" SELECT users.uid, users.name, field_user_name.field_user_name_value
+										FROM field_data_field_user user
+										INNER JOIN field_data_field_semester semester ON user.entity_id = semester.entity_id
+										left join {users} users on users.uid=user.field_user_target_id
+										left join {field_data_field_user_name} field_user_name on field_user_name.entity_id=users.uid
+										WHERE semester.field_semester_target_id = " . $current_semester_id."
+										and user.field_user_target_id!='".$account->uid."'
+										and users.uid>0
+										order by field_user_name.field_user_name_value asc");
+	$options = array();
+	foreach($query as $r){
+		$options[$r->uid] = $r->field_user_name_value;
+	}
+	
+	$form['uid'] = array(
+		'#type'=> 'select',
+		'#title' => t('User'),
+		'#options' => $options,
+		'#required' => true,
+	);
+	
+	$form['message'] = array(
+		'#type'=> 'text_format',
+		'#title' => t('Message'),
+		'#required' => true,
+	);
+	
+	$form['submit'] = array(
+		'#type'=> 'submit',
+		'#value' => t('Send Anonymously')
+	);
+	
+	return $form;
+}
+
+function gradereg_mail($key, &$message, $params) {
+	$message['subject'] = $params['subject'];
+	$message['body'][] = $params['body'];
+}
+
+function gradereg_send_complement_form_submit($form, &$form_state){
+	$sender_uid = $form_state['storage']['uid'];
+	$uid = $form_state['values']['uid'];
+	$message = $form_state['values']['message']['value'];
+	
+	unset($form_state['storage']);
+	
+	$params = array(
+		'subject' => t('You have a new complement'),
+		'body' => '<div style="direction:rtl; text-align: right">' . $message . '</div>',
+	);
+	
+	$receiver = user_load($uid);
+	$mail = $receiver->mail;
+	//$mail = 'gumpagain@gmail.com';
+	
+	$from = 'harmony@moar.org.il';
+	
+	drupal_mail('gradereg', 'send_complement', $mail, null, $params, $from);
+	
+	drupal_set_message(t('The complement has been sent'));
+	
+	$form_state['redirect'] = 'user/'.$sender_uid.'/send-complement';
+}
+
+function gradereg_user_view($account, $view_mode, $langcode){
+	global $user;
+	if(user_access('send complement')){
+		$html = '<form style="clear:both" action="'.url('user/'.$account->uid.'/send-complement').'">
+			<input type="submit" value="'.t('Send Complement').'">
+		</form>';
+	
+		$account->content['send_complement'] = array(
+			'#type' => 'markup',
+			'#markup' => $html,
+			'#weight' => 101,
+		);
+	}
+}
+
+function gradereg_load_grade($node, $account){
+	$grades = db_query("select * from {grades_data} where nid=:nid and uid=:uid", array(':uid' => $account->uid, ':nid' => $node->nid))->fetchAssoc();
+	
+	if(!$grades){
+		return array();
+	}
+	
+	$grade = array();
+	$query = db_query("select * from {grades} where nid=:nid and uid=:uid order by field asc, delta asc", array(':uid' => $account->uid, ':nid' => $node->nid));
+	foreach($query as $r){
+		$grade[$r->field.'_'.$r->delta] = array('score' => $r->score, 'examiner_uid' => $r->examiner_uid, 'created' => $r->created);
+	}
+	
+	$grades['grade'] = $grade;
+	
+	return $grades;
+}
+
+function gradereg_user_grades_list_access($account){
+	global $user;
+
+	if(user_access('available for grade score', $account) && ($account->uid == $user->uid || user_access('administer users'))){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+function gradereg_edit_grade_access($node, $account){
+	$generally_allowed = gradereg_node_grades_list_access($node);
+  if (!$generally_allowed) {
+    return false;
+  }
+  global $user;
+  if ($account->uid == $user->uid) {
+    return false;
+  }
+  return true;
+}
+
+function gradereg_node_grades_list_access($node){
+  global $user;
+	module_load_include('inc', 'arava_center', 'AravaCenterDbApi.class');
+  $dbApi = new AravaCenterDbApi();
+  return $dbApi->isUserSignedUpToCourse($user->uid, $node->nid);
+}
+
+function gradereg_permission() {
+  return array(
+    'grade management' => array(
+      'title' => t('grade management'),
+    ),
+    'available for grade score' => array(
+      'title' => t('available for grade score'),
+    ),
+    'send complement' => array(
+      'title' => t('send complement'),
+    ),
+  );
+}
+
+
+function gradereg_export_excel($filename, $header, $rows){
+	require_once(dirname(__FILE__).'/PHPExcel_Classes/PHPExcel.php');
+	require_once(dirname(__FILE__).'/PHPExcel_Classes/PHPExcel/Writer/Excel5.php');
+	
+	$cols = array();
+	for($i=0; $i<count($header); $i++){
+		if($i>=52){
+			$cols[] = 'B'.chr(ord('A') + $i-52);
+		}else if($i>=26){
+			$cols[] = 'A'.chr(ord('A') + $i-26);
+		}else{
+			$cols[] = chr(ord('A') + $i);
+		}
+	}
+	
+	$objPHPExcel = new PHPExcel();
+	$objPHPExcel->setActiveSheetIndex(0);
+	foreach($header as $index => $r){
+		$colid = $cols[$index].'1';
+		$objPHPExcel->getActiveSheet()->setCellValue($colid, $r);
+	}
+	
+	$rowindex = 0;
+	foreach($rows as $row){
+		$rowindex++;
+		foreach($row as $index => $r){
+			$colid = (isset($cols[$index]) ? $cols[$index] : '').''.($rowindex+1);
+      if (!empty($colid) && !empty($r)) {
+        $objPHPExcel->getActiveSheet()->setCellValue($colid, $r);
+      }
+		}
+	}
+	
+	$objWriter = new PHPExcel_Writer_Excel5($objPHPExcel);
+	$objWriter->save($filename);
+}
+
+/**
+ * Implements hook_page_build
+ * @param $page
+ */
+function gradereg_page_build(&$page) {
+  $node = menu_get_object('node');
+  $arg2 = arg(2);
+  if (!empty($node) && $node->type == 'course' && empty($arg2)) {
+    module_load_include('inc', 'arava_center', 'AravaCenterDbApi.class');
+    $dbAPI = new AravaCenterDbApi();
+    $semester_id = $node->field_semester[LANGUAGE_NONE][0]['target_id'];
+    if (gradereg_node_grades_list_access($node) && $dbAPI->hasSemesterStartedYet($semester_id)) {
+      $blocks['grades'] = array(
+        '#markup' => l('>> ' . t('Course Student Grades'), 'node/' . $node->nid . '/grades', array('attributes' => array('class' => array('blue-button')))),
+        '#weight' => -10,
+      );
+      $page['content'] = array_merge($blocks, $page['content']);
+    }
+  }
+}

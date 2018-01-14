@@ -1,0 +1,433 @@
+/*General site */
+.hidden{
+    display: none;
+}
+.field .field-label{
+    float: right;
+    padding-left: 10px;
+}
+
+.rtl table th, .rtl table td {
+    text-align: right;
+}
+
+.main-menu{
+    display:none;
+}
+#site-name{
+    display:none;
+}
+#tranzila_frame{
+    width:400px;
+    height:300px;
+    border:none
+}
+/*responsive menu*/
+#header-top-inside.mean-container{
+    height: 46px;
+    padding-right:0px;
+}
+.mean-container .mean-nav ul li span{
+     display: block;
+    float: left;
+    margin: 0;
+    padding: 1em 5%;
+    text-align: left;
+    text-decoration: none;
+    text-transform: uppercase;
+    width: 90%;
+    
+        border-bottom: 1px solid #323232;
+    border-top: medium none;
+    color: #fff;
+    line-height: 21px;
+    text-decoration: none;
+    text-transform: none;
+}
+/*accommodation*/
+.node-type-accomodation .field-slideshow-pager{
+    position:absolute;
+    top:468px;
+    right:10px;
+    
+        z-index: 9999;
+}
+    .node-type-accomodation .field-slideshow-pager a{
+        width:20px;
+        height:20px;
+        background-color: #2a68af;
+        border:2px solid #ffffff;
+        overflow: hidden;
+        text-indent: 50px;
+        display: inline-block;
+        margin-left: 5px;
+    }
+    .node-type-accomodation .field-slideshow-pager .activeSlide{
+        background-color: #ffffff;
+        border:2px solid #2a68af;
+    }
+    .node-type-accomodation .field-name-field-price{
+        margin-top:20px;
+        font-weight: bold;
+    }
+    
+/*breadcrunbs*/
+#breadcrumb{
+    padding:0px;
+}
+#breadcrumb a:nth-child(1){
+    position: relative!important;
+    left:auto!important;
+}
+#breadcrumb a, #breadcrumb .breadcrumb-separator,#breadcrumb-inside{
+    line-height: 50px!important;
+}
+.no-banner #page-intro-inside.no-internal-banner-image{
+    border-bottom: none;
+}
+#header-inside{
+    padding-bottom: 20px;
+    border-bottom: 1px solid #cfd0d2;
+}
+#page-intro{
+    margin-top: -50px!important;
+}
+#page-intro-inside{
+    background: none;
+}
+
+/*header and logo and menu*/
+#header {
+    padding-bottom: 0px;
+}
+#site-name, #site-slogan{
+    text-align: left;
+}
+ul.menu li a{
+    text-align: right;
+}
+
+#header-top ul.sf-menu li .nolink:after {
+    line-height: 19px;
+}
+#header-top ul.sf-menu li .nolink:after {
+    content: "\f107";
+    font-family: "FontAwesome";
+    font-size: 12px;
+    line-height: 20px;
+    position: absolute;
+    right: 30px;
+    top: 20px;
+    cursor: pointer;
+}
+#header-top .sf-menu  .nolink {
+    padding-right: 47px!important;
+    cursor: default;
+}
+#header-top ul.menu li .nolink {
+    border-left: 1px solid #215999;
+}
+#header-top ul.menu li .nolink {
+    border-bottom: 4px solid transparent;
+    border-left: 1px solid #363636;
+    color: #fff;
+    font-size: 16px;
+    padding: 16px 30px;
+    text-decoration: none;
+}
+ul.menu li .nolink {
+    text-align: right;
+    display: block;
+    line-height: 150%;
+    padding: 7px 0 8px 25px;
+}
+.header-top-area .nolink {
+    color: #fff;
+    text-decoration: underline;
+}
+.sf-menu .nolink {
+    display: block;
+    position: relative;
+}
+
+/* blue button*/
+.blue-button {
+    background: #2a68af;
+    color: #fff;
+    display: inline-block;
+    padding: 7px 15px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+.blue-button:hover {
+    color: #fff;
+    text-decoration: none;
+}
+
+
+/* hello user */
+.hello-user {
+    display: inline-block;
+    padding-top: 14px;
+    padding-right: 20px;
+    float: left;
+    margin-top: -56px;
+    color:#ffffff;
+}
+.between-headers + #header {
+    padding-top: 10px;
+}
+
+/* print */
+@media print {
+    a,
+    a:visited {
+        text-decoration: none;
+    }
+    a[href]:after {
+        content: "";
+    }
+    abbr[title]:after {
+        content: "";
+    }
+    a[href^="javascript:"]:after,
+    a[href^="#"]:after {
+        content: "";
+    }
+}
+
+/*teacher*/
+.node-teacher .field-name-field-mt-photo{
+    margin-right: 10px; 
+    margin-bottom:10px
+}
+
+/*Course*/
+.node-type-course .field-name-body {
+    margin-top: 20px;
+}
+
+.node-type-course .field-name-field-lesson-days .field-items div{
+    display: inline;
+    margin-left: 5px;
+}
+.node-type-course .field-name-field-audio-files,
+.node-type-course .field-name-field-pdf-files {
+    clear: both;
+    padding-top: 20px;
+}
+/*catalog*/
+
+.page-catalog .view-catalog .item-list{
+    border:1px solid #2a68af;
+    margin-bottom: 40px;
+}
+.page-catalog .view-catalog h3{
+    background-color: #2a68af;
+    color: #f0f0f0;
+    font-size: 40px;
+    height: 55px;
+    margin-top:0px;
+    padding-right: 20px;
+}
+.page-catalog .field-content{
+    clear:both;
+}
+.page-catalog .field-content a{
+    font-size: 25px;
+    float: right;
+    clear: both;
+}
+.page-catalog .views-field-body,.page-catalog .views-field-field-lesson-days, .page-catalog .views-field-field-teacher{
+    margin-right:  20px;
+}
+.page-catalog .views-row{
+    list-style-type: none;
+    border-bottom: 1px solid #acacac;
+    margin-left: 20px!important;
+    margin-bottom: 10px;
+}
+.page-catalog .views-row-last{
+    border-bottom:none;
+}
+.page-catalog .views-label-field-lesson-days{
+    float: right;
+    margin-left: 10px;
+    font-weight: bold;
+}
+.page-catalog .views-field-field-lesson-days .field-content{
+    display: inline-block;
+}
+.page-catalog .views-label-field-teacher{
+    font-weight: bold;
+    margin-top:20px;
+    float: right;
+}
+.page-catalog .node-teacher h2{
+    margin-top:0px;
+    float:right;
+    width: 100%;
+}
+.page-catalog .node-teacher h2 a{
+    float: right;
+}
+.page-catalog .views-field-body table{
+    margin-bottom: 0px;
+}
+.page-catalog .views-field-body .field-content div a{
+    font-size: 14px;
+}
+/*carpooling*/
+.page-myrides table td, .page-rides-carpooling table td, .page-rides-carpooling table th{
+    text-align: right;
+}
+.form-item-location {
+            width:200px;
+        }
+
+
+/**
+Animals in the area
+**/
+.animals-breadcrumbs {
+    margin-bottom: 20px;
+}
+.view-animals li{
+    border: 1px solid #ccc;
+    padding: 7px;
+    margin: 5px 0 10px 0;
+    overflow: hidden;
+}
+.view-animals .views-field-name {
+    font-size: 18px;
+    font-weight: bold;
+}
+.view-animals .views-field-field-image {
+    float: left;
+    border: 1px solid #ccc;
+    margin: 0 10px 10px 0;
+}
+.view-animals .views-field-title {
+    display: inline-block;
+    font-weight: bold;
+}
+.view-animals .views-field-title:after {
+     content: " -";
+}
+.view-animals .views-field-field-latin-name {
+     display: inline-block;
+     font-weight: bold;
+}
+.view-animals .views-field-body {
+    margin-top: 10px;
+}
+.view-animals .ui-accordion .ui-accordion-content {
+    padding: 0;
+}
+.view-animals .view-grouping-header {
+    display: block;
+    cursor: pointer;
+    position: relative;
+    background-color: #2a68af;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    padding: 5px 10px;
+    color: #fff;
+}
+.view-animals .view-grouping-header .toggle {
+    color: #fff;
+    font-weight: bold;
+    font-size: 22px;
+}
+.view-animals .view-grouping-content h3 {
+    font-size: 15px;
+    font-weight: normal;
+}
+.view-animals .view-grouping-content ul {
+    padding: 0;
+}
+
+/******************************
+* fixed for admin toolbar
+******************************/
+
+div#admin-toolbar div.admin-tab {
+    height: 24px !important;
+}
+#admin-toolbar ul.menu li a {
+    height: 21px !important;
+}
+
+/*********************************
+* Assignments
+*********************************/
+
+#arava-assignments-do-assignment-form .field-suffix{
+color: #AD1818;
+}
+
+.page-assignment .text-format-wrapper > a,
+.page-assignment .text-format-wrapper > fieldset {
+    display: none !important;
+}
+
+.page-assignment .text-format-wrapper {
+    margin-bottom: 40px;
+}
+
+
+/*********************************
+* compound file field - display
+*********************************/
+.view-files-for-course .views-table{
+    margin-top: 0;
+}
+.view-files-for-course .view-header {
+/*.node-type-course .field-type-field-collection .field-label{*/
+    display: inline-block;
+    padding: 10px 20px;
+    background: #4187d1;
+    color: #fff;
+    width: 748px;
+    margin: 15px 1px 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+/*.node-type-course .field-type-field-collection .field-item{*/
+    /*margin-bottom: 0;*/
+/*}*/
+/*.node-type-course .field-type-field-collection .field-collection-view{*/
+    /*margin: 0;*/
+    /*padding: 0;*/
+    /*border: none;*/
+/*}*/
+/*.node-type-course .field-collection-container{*/
+    /*border: none;*/
+/*}*/
+/*.node-type-course .field-type-field-collection .content > .field {*/
+    /*display: inline-block;*/
+    /*padding: 10px 20px;*/
+    /*background: #E4E4E4;*/
+    /*margin-left: 1px;*/
+    /*box-sizing: border-box;*/
+/*}*/
+
+/*.field-name-field-file {*/
+    /*width: 350px;*/
+/*}*/
+/*.field-name-field-description {*/
+    /*width: 300px;*/
+/*}*/
+/*.node-type-course .field-type-field-collection .content > .field.field-name-field-uploaded-date {*/
+    /*width: 98px;*/
+    /*margin-left: 0;*/
+/*}*/
+
+
+/*password restriction*/
+#arava-center-view-only-file-form {
+    width:50%;
+    margin-left: auto;
+    margin-right: auto;
+}

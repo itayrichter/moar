@@ -1,0 +1,91 @@
+<?php
+
+
+
+function mymodule_init(){
+    global $theme;
+    // krumo($theme);
+    drupal_add_css(drupal_get_path("module", "mymodule")."/mymodule.css");
+    if ($theme != "seven"){
+        drupal_add_js("https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/2.9.0/vendors/scrolloverflow.min.js", array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+        drupal_add_js(drupal_get_path("module", "mymodule")."/js/jquery.livequery.js", array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+        drupal_add_js(drupal_get_path("module", "mymodule")."/js/jquery.slicknav.min.js", array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+        drupal_add_js(drupal_get_path("module", "mymodule")."/js/slick.min.js", array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+        drupal_add_js("https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/2.9.0/jquery.fullPage.js", array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+        drupal_add_js(drupal_get_path("module", "mymodule")."/js/moar.js", array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+        drupal_add_js(drupal_get_path("module", "mymodule")."/mymodule.js", array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+    }
+}
+function mymodule_breadcrumbs($title = ''){
+    $node = menu_get_object();
+    $item = '<div class="main_breadcrumbs">';
+        $links = array();
+        $links[] = l(t('Home'), '');
+            if(arg(0 ) == 'node' && is_numeric(arg(1))){
+
+                $node = node_load(arg(1));
+                if($node->type == 'news'){
+                    $links[] = l(t('Новости'), 'news');
+                }
+                if($node->type == 'article'){
+                    $links[] = l(t('Статьи'), 'article');
+                }
+            }
+
+
+        if(!empty($title)) $links[] = $title;
+        $item .= implode('<span class="arrow">→</span>', $links);
+    $item .= '</div>';
+    return $item;
+}
+function mymodule_page_title($title = ''){
+    $node = menu_get_object();
+    if(mymodule_page_is_nav('news/*')) $title = t('Новости');
+    if(arg(0) == 'node' && is_numeric(arg(1))){
+        $node = node_load(arg(1));
+        if($node->nid == 62){
+           $title = function_exists('drupal_package_text_load') ? drupal_package_text_load('about_title') : '';
+        }
+    }
+    return !empty($title) ? '<h1 class="page_title">'.$title.'</h1>' : '';
+}
+function mymodule_page_is_nav($pages){
+    $path = drupal_strtolower(drupal_get_path_alias($_GET['q']));
+    $page_match = drupal_match_path($path, $pages);
+    if ($path != $_GET['q']) {
+        $page_match = $page_match || drupal_match_path($_GET['q'], $pages);
+    }
+    return $page_match;
+}
+
+function mymodule_device_detect(){
+    require_once drupal_get_path("module", "mymodule").'/Mobile_Detect.php';
+    $detect = new Mobile_Detect;
+    if($detect->isMobile()){
+        if($detect->isTablet()){
+            $device = 'tablet';
+        }else{
+            $device = 'phone';
+        }
+    }else{
+        $device = 'pc';
+    }
+    return $device;
+}
+// function mymodule_form_alter(&$form, &$form_state, $form_id){
+//     // krumo($form);
+//     if ($form['#id'] == 'page-node-form'){
+//         if ($form['nid']['#value'] == 29){
+//             mymodule_node_edit_redirect(2754);
+//         }
+//         // if ($form['nid']['#value'] == 2753){
+//         //     $form['#submit'][] = mymodule_node_redirect(27);
+//         // }
+//     }
+// }
+// function mymodule_node_redirect($node_nid){
+//     drupal_goto('/node/' . $node_nid);
+// }
+// function mymodule_node_edit_redirect($node_nid){
+//     drupal_goto('/node/' . $node_nid . '/edit');
+// }

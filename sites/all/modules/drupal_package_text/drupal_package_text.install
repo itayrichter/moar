@@ -1,0 +1,70 @@
+<?php
+/**
+ * Implements hook_schema().
+ */
+function drupal_package_text_schema(){
+    $schema['drupal_package_text'] = array(
+        'description' => 'The drupal_package_text table.',
+        'fields' => array(
+            'id' => array(
+              'description'       => '',
+              'type'              => 'int',
+              'not null'          => FALSE,
+              'unsigned'          => FALSE,
+              'length'            => 100,
+              'auto_increment'    => TRUE
+            ),
+            'title' => array(
+              'description'       => '',
+              'type'              => 'text',
+              'size'              => 'big'
+            ),
+            'machine_name' => array(
+              'description'       => 'The machine-readable name.',
+              'type'              => 'varchar',
+              'length'            => 250,
+              'not null'          => TRUE,
+            ),
+            'group_name' => array(
+              'description'       => 'The machine-readable name.',
+              'type'              => 'text',
+            ),
+            'data' => array(
+              'description'       => '',
+              'type'              => 'text',
+              'size'              => 'big'
+            ),
+        ),
+        'primary key' => array('id'),
+    );
+    $schema['drupal_package_text_groups'] = array(
+        'description' => 'The drupal_package_text_groups table.',
+        'fields' => array(
+            'id' => array(
+              'description'       => '',
+              'type'              => 'int',
+              'not null'          => FALSE,
+              'unsigned'          => FALSE,
+              'length'            => 100,
+              'auto_increment'    => TRUE
+            ),
+            'title' => array(
+              'description'       => '',
+              'type'              => 'text',
+              'size'              => 'big'
+            ),
+            'machine_name' => array(
+              'description'       => 'The machine-readable name.',
+              'type'              => 'varchar',
+              'length'            => 250,
+              'not null'          => TRUE,
+            ),
+        ),
+        'primary key' => array('id'),
+    );
+    return $schema;
+}
+function drupal_package_text_uninstall(){
+  drupal_uninstall_schema('drupal_package_text');
+  drupal_uninstall_schema('drupal_package_text_groups');
+}

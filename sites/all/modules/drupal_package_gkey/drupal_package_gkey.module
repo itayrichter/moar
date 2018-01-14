@@ -1,0 +1,55 @@
+<?php
+
+define('DRUPAL_PACKAGE_GKEY_API', variable_get('drupal_package_gkey_api', ''));
+
+/**
+ * Implements hook_permission().
+ */
+function drupal_package_gkey_permission() {
+  	return array(
+    	'access drupal_package_gkey' => array(
+      		'title' => t('Access Google API KEY settings'),
+    	),
+  	);
+}
+/**
+ * Implements hook_menu().
+ */
+function drupal_package_gkey_menu() {
+	$items['admin/config/gkey'] = array(
+		'title' => 'Google API KEY',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('drupal_package_gkey_settings_form'),
+		'access arguments' => array('access drupal_package_gkey'),
+	);
+	return $items;
+}
+/**
+ * Implements hook_form().
+ */
+function drupal_package_gkey_settings_form($form, $form_state){
+	$form = array();
+	$form['drupal_package_gkey_api'] = array(
+		'#type'				=> 'textfield',
+		'#title'			=> 'JavaScript API KEY',
+		'#default_value'	=> DRUPAL_PACKAGE_GKEY_API,
+		'#field_suffix'		=> l(t('New api key'), 'https://developers.google.com/maps/documentation/javascript/get-api-key', array('attributes' => array('target' => '_blank')))
+	);
+	return system_settings_form($form);
+}
+/**
+ * Implements hook_js_alter().
+ */
+function drupal_package_gkey_js_alter(&$javascript){
+	$api_key = DRUPAL_PACKAGE_GKEY_API;
+	if(!empty($api_key)){
+		foreach ($javascript as $key => $java){
+			$pos = strpos($key, 'maps/api/js?sensor=false');
+			if($pos){
+				if(!empty($java['data'])){
+					$javascript[$key]['data'] = str_replace('maps/api/js?sensor=false', 'maps/api/js?sensor=false&key='.DRUPAL_PACKAGE_GKEY_API, $javascript[$key]['data']);
+				}
+			}
+		}
+	}
+}

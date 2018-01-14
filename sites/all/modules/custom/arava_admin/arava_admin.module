@@ -1,0 +1,551 @@
+<?php
+
+function arava_admin_init(){
+	if($_SERVER['HTTP_HOST'] == 'www.moar.org.il'){
+		header('Location: http://moar.org.il'.$_SERVER['REQUEST_URI']);
+		exit();
+	}
+	
+	if(arg(0) == 'courses-archive' && isset($_GET['semester']) && !$_GET['semester']){
+		$uri = $_SERVER['REQUEST_URI'];
+		$uri = str_replace('semester=', 'pp=', $uri);
+		header('Location: '.$uri);
+		exit();
+	}
+}
+
+/**
+ * Implements hook_menu().
+ * @return mixed
+ */
+function arava_admin_menu() {
+
+  $items['admin/arava-admin'] = array(
+    'title' => t('Arava Admin'),
+    'page callback' => 'arava_admin_page',
+    'access arguments' => array('view arava administration reports'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'arava_admin.admin.inc'
+  );
+
+  $items['admin/admin-presence'] = array(
+    'title' => t('Administer Presence'),
+    'page callback' => 'arava_admin_presence_page',
+    'access arguments' => array('view arava administration reports'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'arava_admin.presence.inc'
+  );
+
+  $items['admin/admin-meals'] = array(
+    'title' => t('Administer Meals'),
+    'page callback' => 'arava_admin_meals_page',
+    'access arguments' => array('view arava administration reports'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'arava_admin.meals.inc'
+  );
+
+  $items['admin/admin-meals/people'] = array(
+    'title' => t('Administer Meals - People'),
+    'page callback' => 'arava_admin_meals_people_page',
+    'access arguments' => array('view arava administration reports'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'arava_admin.meals.inc'
+  );
+
+  $items['admin/admin-meals/guests'] = array(
+    'title' => t('Administer Meals - Guests'),
+    'page callback' => 'arava_admin_meals_guests_page',
+    'access arguments' => array('view arava administration reports'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'arava_admin.meals.inc'
+  );
+
+  $items['admin/send-emails'] = array(
+    'title' => t('Send Emails'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('arava_admin_send_emails_form'),
+    'access arguments' => array('view arava administration reports'),
+    'type' => MENU_CALLBACK,
+    'file' => 'arava_admin.send_emails.inc'
+  );
+
+  $items['admin/attendance/take'] = array(
+    'title' => t('Take attendance'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('arava_admin_take_attendance_form'),
+    'access arguments' => array('take attendance'),
+    'type' => MENU_CALLBACK,
+    'file' => 'arava_admin.attendance.inc'
+  );
+
+  // arg3 = uid (of the student)
+  // arg4 = course nid
+  // arg5 = lesson number
+  // arg6 = new status
+  $items['admin/attendance/change-status/%/%/%/%'] = array(
+    'title' => t('Change attendance status'),
+    'page callback' => 'arava_admin_change_attendance_status',
+    'page arguments' => array(3,4,5,6),
+    'access arguments' => array('take attendance'),
+    'type' => MENU_CALLBACK,
+    'file' => 'arava_admin.attendance.inc'
+  );
+
+  $items['admin/arava-reports/course/%/attendance'] = array(
+    'title' => t('Attendance Report'),
+    'page callback' => 'arava_admin_attendance_report',
+    'page arguments' => array(3),
+    'access arguments' => array('administer attendance'),
+    'type' => MENU_CALLBACK,
+    'file' => 'arava_admin.attendance.inc'
+  );
+
+  $items['admin/course/%/remove/%'] = array(
+    'title' => t('Remove user from course'),
+    'page callback' => 'arava_admin_remove_user_form_course',
+    'page arguments' => array(2,4),
+    'access arguments' => array('manage registration'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/arava-reports/courses-students'] = array(
+    'title' => t('Courses students'),
+    'page callback' => 'arava_courses_students_page',
+    'access arguments' => array('view arava administration reports'),
+    'type' => MENU_CALLBACK,
+    'file' => 'arava_admin.courses_students.inc'
+  );
+
+  $items['node/%node/duplicate'] = array(
+    'title' => t('Duplicate Semester'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('arava_admin_duplicate_semester_form', 1),
+    'access arguments' => array('access duplicate'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function arava_admin_permission() {
+  return array(
+    'view arava administration reports' => array(
+      'title' => t('View Arava administration reports'),
+    ),
+    'take attendance' => array(
+      'title' => t('Take Attendance'),
+    ),
+    'administer attendance' => array(
+      'title' => t('Administer Attendance'),
+    ),
+    'manage registration' => array(
+      'title' => t('Manage Registration'),
+    ),
+    'access duplicate' => array(
+      'title' => t('access duplicate'),
+    ),
+  );
+}
+
+function arava_admin_preprocess_page(&$vars) {
+  if (arg(0) == 'user') {
+    if (user_access('administer nodes')) {
+      module_load_include('inc', 'arava_registration', 'MySemesterAPI.class');
+      $mySemesterAPI = new MySemesterAPI(arg(1));
+      $mySemesterId = $mySemesterAPI->getMySemesterId();
+      if ($mySemesterId) {
+        drupal_set_message(l(t('Edit user\'s semester'), 'node/' . $mySemesterId . '/edit'), 'status');
+      }
+    }
+  }
+  if (!empty($vars['node']) && $vars['node']->type == 'my_semester') {
+    if (user_access('administer nodes')) {
+      $uid = $vars['node']->field_user[LANGUAGE_NONE][0]['target_id'];
+      drupal_set_message(l(t('Edit user\'s personal details'), 'user/' . $uid . '/edit'), 'status');
+    }
+  }
+}
+
+/**
+ * Implements hook_block_info
+ * @return mixed
+ */
+function arava_admin_block_info() {
+  $blocks['attendance_choose_lesson'] = array(
+    'info' => t('Attendance choose lesson'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view
+ * @param string $delta
+ * @return mixed
+ */
+function arava_admin_block_view($delta = '') {
+  switch ($delta) {
+    case 'attendance_choose_lesson':
+      module_load_include('inc', 'arava_admin', 'arava_admin.attendance');
+      $block['subject'] = null;
+      $form = drupal_get_form('arava_admin_attendance_choose_lesson_form');
+      $block['content'] = drupal_render($form);
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_views_api
+ * @return array
+ */
+function arava_admin_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'arava_admin') . '/views',
+    'template path' => drupal_get_path('module', 'arava_admin') . '/views/templates',
+  );
+}
+
+function _arava_admin_get_semesters_dropdown() {
+  // get list of semesters from database
+  module_load_include('inc', 'arava_center', 'AravaCenterDbApi.class');
+  $dbApi = new AravaCenterDbApi();
+  $semesters = $dbApi->getAllSemesters();
+
+  if (!empty($_GET['semester']) && is_numeric($_GET['semester'])) {
+    $current_semester = $_GET['semester'];
+  }
+  else {
+    module_load_include('inc', 'arava_registration', 'MySemesterAPI.class');
+    $mySemesterAPI = new MySemesterAPI();
+    $current_semester = $mySemesterAPI->getSemesterId();
+  }
+
+  // create form element with options retrieved from database
+  return array(
+    '#type' => 'select',
+    '#options' => $semesters,
+    '#default_value' => $current_semester,
+  );
+}
+
+function arava_admin_semesters_dropdown_form($form, &$form_state) {
+  $form['semesters'] = _arava_admin_get_semesters_dropdown();
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('go'),
+  );
+
+  return $form;
+}
+
+function arava_admin_semesters_dropdown_form_submit($form, &$form_state) {
+  if (!empty($form_state['values']['semesters']) && is_numeric($form_state['values']['semesters'])) {
+    $get = $_GET;
+    unset($get['q']);
+    $get['semester'] = $form_state['values']['semesters'];
+    drupal_goto($_GET['q'], array('query' => $get));
+  }
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function arava_admin_page_build(&$page) {
+  if (arg(1) == 'attendance' && arg(2) == 'take') {
+    $block = module_invoke('arava_admin', 'block_view', 'attendance_choose_lesson');
+    $blocks['attendance_choose_lesson'] = array(
+      '#markup' => $block['content'],
+      '#weight' => -10,
+    );
+    $page['content'] = array_merge($blocks, $page['content']);
+  }
+}
+
+function view_get_link_to_send_emails($view) {
+  return l(t('send emails'),
+          'admin/send-emails',
+          array('query' => array(
+            'view' => $view->name,
+            'display' => $view->current_display,
+            'args' => $view->args,
+            'exposed' => $view->exposed_raw_input))
+          );
+}
+
+
+function arava_admin_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'send_email':
+      $message['subject'] = $params['subject'];
+      $message['body'] = $params['body'];
+      $message['params']['attachments'] = $params['attachments'];
+      break;
+  }
+}
+
+/**
+ * Batch 'finished' callback
+ */
+function arava_admin_finished($success, $results, $operations) {
+  if (!$success) {
+    $error_operation = reset($operations);
+    drupal_set_message(t('An error occurred while processing @operation with arguments : @args', array('@operation' => $error_operation[0], '@args' => print_r($error_operation[0], TRUE))));
+  }
+  else {
+    drupal_set_message(t('Emails were sent.'));
+  }
+  drupal_goto('admin/send-emails', array('query' => $_SESSION['send_emails_redirect']));
+}
+
+/**
+ * Generic batch operation: called for each request.
+ */
+function arava_admin_send_emails_op($emails, $params) {
+  foreach ($emails as $email) {
+    if (!empty($email)) {
+      $from_parts = explode('<', $params['from']);
+      $from_name = trim($from_parts[0]);
+      $from_email = trim(str_replace('>', '', $from_parts[1]));
+      $from_array = array('mail' => $from_email, 'name' => $from_name);
+      $result = drupal_mail('arava_admin', 'send_email', $email, 'en', $params, $from_array);
+    }
+  }
+}
+
+function _arava_admin_remove_user_from_course_link($data) {
+  if (user_access('manage registration')) {
+    $path = drupal_get_path('module', 'arava_admin');
+    drupal_add_js($path . '/js/arava_admin.js');
+
+    $user = $data->users_field_data_field_user_uid;
+    $course = $data->node_field_data_field_course_nid;
+    return '<a class="remove_from_course" course="' . $course . '" user="' . $user . '">' . t('Remove from course') . '</a>';
+  }
+  else {
+    return t('no permissions');
+  }
+}
+
+function arava_admin_remove_user_form_course($course, $user) {
+  $course_node = node_load($course);
+  $semester = $course_node->field_semester[LANGUAGE_NONE][0]['target_id'];
+  module_load_include('inc', 'arava_registration', 'MySemesterAPI.class');
+  $mySemesterAPI = new MySemesterAPI($user, null, $semester);
+  $mySemesterAPI->removeCourse($course);
+  print json_encode(array('success' => true));
+}
+
+function _arava_admin_get_semester_options() {
+  module_load_include('inc', 'arava_center', 'AravaCenterDbApi.class');
+  $dbApi = new AravaCenterDbApi();
+  return $dbApi->getAllSemesters();
+}
+
+function _arava_admin_get_default_semester() {
+  module_load_include('inc', 'arava_registration', 'MySemesterAPI.class');
+  $MySemesterApi = new MySemesterAPI();
+  return $MySemesterApi->getCurrentSemester(true);
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function arava_admin_theme_registry_alter(&$theme_registry) {
+  // Defined path to the current module.
+  $module_path = drupal_get_path('module', 'arava_admin');
+  // Find all .tpl.php files in this module's folder recursively.
+  $template_file_objects = drupal_find_theme_templates($theme_registry, '.tpl.php', $module_path);
+  // Iterate through all found template file objects.
+  foreach ($template_file_objects as $key => $template_file_object) {
+    // If the template has not already been overridden by a theme.
+    if (!isset($theme_registry[$key]['theme path']) || !preg_match('#/themes/#', $theme_registry[$key]['theme path'])) {
+      // Alter the theme path and template elements.
+      $theme_registry[$key]['theme path'] = $module_path;
+      $theme_registry[$key] = array_merge($theme_registry[$key], $template_file_object);
+      $theme_registry[$key]['type'] = 'module';
+    }
+  }
+}
+
+function arava_admin_form_alter(&$form, $form_state, $form_id){
+	$fields = array(
+		'field_pdf_files_comp',
+		'field_audio_files_comp',
+		'field_tamlil_files_comp',
+		'field_videos_files_comp',
+	);
+
+	if($form_id == 'course_node_form'){
+	  $num = isset($form['#node']->field_num_lessons['und'][0]['value']) ? $form['#node']->field_num_lessons['und'][0]['value'] : 0;
+	
+	  foreach($fields as $field){
+		if(isset($form[$field]['und'][0]) && $form[$field]['und'][0]){
+			for($i = 0; $i< 1000; $i++){
+				if(!isset($form[$field]['und'][$i])){
+					break;
+				}
+				
+				$form[$field]['und'][$i]['field_lesson']['und'][0]['value']['#size'] = 1;
+				$form[$field]['und'][$i]['field_lesson']['und'][0]['value']['#type'] = 'select';
+				$opts = array('' => t('None'));
+				for($j=1; $j<=$num; $j++){
+					$opts[$j] = t('lesson') . ' ' . $j;
+				}
+				$form[$field]['und'][$i]['field_lesson']['und'][0]['value']['#options'] = $opts;
+			}
+		}
+	  }
+	}
+	
+	if($form_id == 'course_node_form' && (isset($form['#node']->nid) && $form['#node']->nid) && user_access('access duplicate')){
+		$form['actions']['clone'] = array(
+			'#type' => 'submit',
+			'#value' => t('Duplicate'),
+			'#id' => 'clonebtn',
+			'#weight' => 12,
+			'#submit' => array('arava_admin_clone_course_submit'),
+		);
+	}
+	
+	if($form_id == 'semester_node_form' && (isset($form['#node']->nid) && $form['#node']->nid) && user_access('access duplicate')){
+		$form['actions']['clone'] = array(
+			'#type' => 'submit',
+			'#value' => t('Duplicate'),
+			'#id' => 'clonebtn',
+			'#weight' => 12,
+			'#submit' => array('arava_admin_clone_semester_submit'),
+		);
+	}
+}
+
+function arava_admin_clone_course($node){
+	unset($node->nid);
+	unset($node->vid);
+	
+	$node->field_pdf_files_comp = array();
+	$node->field_audio_files_comp = array();
+	$node->field_tamlil_files_comp = array();
+	$node->field_videos_files_comp = array();
+	$node->title = 'Copy of - '.$node->title;
+	
+	return $node;
+}
+
+function arava_admin_clone_course_submit($form, &$form_state){
+	if($form_state['triggering_element']['#id'] == 'clonebtn'){
+		$node = $form_state['node'];
+		$node = arava_admin_clone_course($node);
+		
+		node_save($node);
+		
+		$form_state['redirect'] = 'node/'.$node->nid.'/edit';
+	}
+}
+
+function arava_admin_duplicate_semester_form($form, $form_state, $node){
+	$form_state['storage']['nid'] = $node->nid;
+	
+	$form['semester_dates_start'] = array(
+		'#title' => t('Semester Dates (Start)'),
+		'#date_format' => 'm/d/Y',
+		'#date_year_range' => '0:+10',
+		'#type' => 'date_popup',
+		'#required' => true,
+	);
+	
+	$form['semester_dates_end'] = array(
+		'#title' => t('Semester Dates (End)'),
+		'#date_format' => 'm/d/Y',
+		'#date_year_range' => '0:+10',
+		'#type' => 'date_popup',
+		'#required' => true,
+	);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Duplicate'),
+	);
+	
+	return $form;
+}
+
+function arava_admin_duplicate_semester_form_submit($form, &$form_state){
+	$nid = $form_state['storage']['nid'];
+	$node = node_load($nid);
+	
+	$oldnid = $node->nid;
+	unset($node->nid);
+	unset($node->vid);
+	$node->title = 'Copy of - '.$node->title;
+	
+	$diff = strtotime($form_state['values']['semester_dates_start']) - $node->field_semester_dates['und'][0]['value'];
+	
+	$node->field_semester_dates['und'][0]['value'] = strtotime($form_state['values']['semester_dates_start']);
+	$node->field_semester_dates['und'][0]['value2'] = strtotime($form_state['values']['semester_dates_end']);
+	
+	$node->field_open_for_registration['und'][0]['value'] = 1;
+	
+	node_save($node);
+	
+	$courses = db_query("select entity_id from {field_data_field_semester} where entity_type='node' and deleted='0' and bundle='course' and field_semester_target_id=:id", array(':id' => $oldnid));
+	foreach($courses as $r){
+		$course = node_load($r->entity_id);
+		
+		if($course){
+			$course = arava_admin_clone_course($course);
+			$course->field_semester['und'][0]['target_id'] = $node->nid;
+			
+			if($diff > 0 && isset($course->field_lesson_times['und'][0]['value']) && $course->field_lesson_times['und'][0]['value']){
+				foreach($course->field_lesson_times['und'] as $index => $prop){
+					if(isset($course->field_lesson_times['und'][$index]['value']) && $course->field_lesson_times['und'][$index]['value']){
+						$course->field_lesson_times['und'][$index]['value'] += $diff;
+						$course->field_lesson_times['und'][$index]['value2'] += $diff;
+					}
+				}
+			}
+			
+			node_save($course);
+		}
+	}
+	
+	unset($form_state['storage']);
+	$form_state['redirect'] = 'node/'.$node->nid.'/edit';
+	
+	drupal_set_message('The semester ('.l($node->title, 'node/'.$node->nid).') has been created');
+}
+
+function arava_admin_clone_semester_submit($form, &$form_state){
+	if($form_state['triggering_element']['#id'] == 'clonebtn'){
+		$node = $form_state['node'];
+		
+		drupal_goto('node/'.$node->nid.'/duplicate');
+		exit();
+		
+		/*
+		$oldnid = $node->nid;
+		unset($node->nid);
+		unset($node->vid);
+		$node->title = 'Copy of - '.$node->title;
+		node_save($node);
+		
+		$courses = db_query("select entity_id from {field_data_field_semester} where entity_type='node' and deleted='0' and bundle='course' and field_semester_target_id=:id", array(':id' => $oldnid));
+		foreach($courses as $r){
+			$course = node_load($r->entity_id);
+			
+			if($course){
+				$course = arava_admin_clone_course($course);
+				$course->field_semester['und'][0]['target_id'] = $node->nid;
+				node_save($course);
+			}
+		}
+		
+		$form_state['redirect'] = 'node/'.$node->nid.'/edit';
+		*/
+	}
+}

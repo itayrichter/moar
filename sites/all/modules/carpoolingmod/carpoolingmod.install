@@ -1,0 +1,150 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the FullCalendar module.
+ */
+
+function carpoolingmod_schema() {
+  $schema = array();
+
+  $schema['carpooling_pref'] = array(
+    'description' => 'carpooling_pref',
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'semester' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'available_seats' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'remaining_seats' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'location' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'departureday' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'departuretime' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'returnday' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'returntime' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('uid', 'semester'),
+  );
+
+  $schema['carpooling_ride'] = array(
+    'description' => 'carpooling_ride',
+    'fields' => array(
+      'join_uid' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'offer_uid' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'semester' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('join_uid', 'offer_uid', 'semester'),
+  );
+
+  return $schema;
+}
+
+function carpoolingmod_install() {
+	$vid = db_query("select vid from {taxonomy_vocabulary} where machine_name=:machine_name", array(':machine_name' => 'location'))->fetchField();
+	
+	variable_set('carpoolingmod_location_vid', $vid);
+}
+
+function carpoolingmod_uninstall() {
+
+}
+
+/**
+ * Add semester field to carpooling table, and set all existing rides to semester 1
+ */
+function carpoolingmod_update_7001() {
+
+  $spec = array(
+    'type' => 'int',
+    'length' => 11,
+    'not null' => TRUE,
+    'default' => 0,
+  );
+
+  db_add_field('carpooling_pref', 'semester', $spec);
+  db_add_field('carpooling_ride', 'semester', $spec);
+
+  db_query('UPDATE carpooling_pref SET semester=1');
+  db_query('UPDATE carpooling_ride SET semester=1');
+}
+
+/**
+ * Add semester to primary key
+ */
+function carpoolingmod_update_7002() {
+  db_drop_primary_key('carpooling_pref');
+  db_add_primary_key('carpooling_pref', array('uid', 'semester'));
+
+  db_drop_primary_key('carpooling_ride');
+  db_add_primary_key('carpooling_ride', array('join_uid', 'offer_uid', 'semester'));
+}

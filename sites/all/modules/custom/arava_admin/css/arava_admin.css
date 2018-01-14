@@ -1,0 +1,94 @@
+.page-admin-attendance-take .form-item-semester,
+.page-admin-attendance-take #course-div,
+.page-admin-attendance-take #lesson-div {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.page-admin-attendance-take .form-type-select {
+    position: relative;
+}
+.page-admin-attendance-take select.progress-disabled {
+    float: none;
+}
+.page-admin-attendance-take .ajax-progress {
+    position: absolute;
+    right: 0;
+    bottom: -13px;
+    width: 200px;
+}
+
+
+.attendance_warning {
+    display: none;
+    position: absolute;
+    z-index: 5;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    width: 100%;
+    height: 100%;
+    padding: 30px;
+    box-sizing: border-box;
+}
+
+.attendance_status {
+    border: 1px solid #ccc;
+    padding: 10px;
+    background: darkturquoise;
+    color: white;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.students-header .titles {
+    margin-right: 200px;
+}
+.page-admin-attendance-take .form-type-checkboxes {
+    margin: 0;
+    padding: 0 5px;
+}
+.page-admin-attendance-take .form-type-checkboxes:nth-of-type(2n) {
+    background: #eee;
+}
+.page-admin-attendance-take .form-type-checkboxes > label {
+    display: inline-block;
+    width: 200px;
+}
+.page-admin-attendance-take .form-type-checkboxes .form-checkboxes {
+    display: inline-block;
+}
+.page-admin-attendance-take .form-type-checkboxes .form-checkboxes .form-type-checkbox,
+.students-header .titles span {
+    display: inline-block;
+    width: 50px;
+    text-align: center;
+}
+.page-admin-attendance-take .form-type-checkboxes .form-checkboxes label {
+    display: none;
+}
+label.absent {
+    color: red;
+}
+.attendance-value {
+    cursor: pointer;
+}
+
+#arava-admin-semesters-dropdown-form .form-item-semesters{
+    display: inline-block;
+}
+
+/**
+* send emails
+**/
+#edit-extra-emails {
+    direction: ltr;
+}
+
+/**
+* general
+**/
+.hidden {
+    display: none;
+}
+.loading{
+
+}

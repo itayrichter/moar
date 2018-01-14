@@ -1,0 +1,314 @@
+<?php
+
+
+function arava_assignments_menu() {
+  $items['assignment/%'] = array(
+    'title callback' => 'arava_assignments_do_assignment_title',
+    'title arguments' => array(1),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('arava_assignments_do_assignment_form', 1),
+    'file' => 'arava_assignments.do.inc',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('signup to courses and accommodation'),
+  );
+
+  $items['assignment/%/check/%'] = array(
+    'title callback' => 'arava_assignments_do_assignment_title',
+    'title arguments' => array(1),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('arava_assignments_check_assignment_form', 1, 3),
+    'file' => 'arava_assignments.check.inc',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('signup to courses and accommodation'),
+  );
+
+  $items['assignments/check'] = array(
+    'title' => t('Assignments to check'),
+    'page callback' => '_arava_assignments_assignments_to_check',
+    'type' => MENU_CALLBACK,
+    // the check that the student is signed up to the course happens in the "do assignment" phase
+    'access arguments' => array('signup to courses and accommodation'),
+  );
+
+  return $items;
+}
+
+function arava_assignments_do_assignment_title($nid) {
+  $node = node_load($nid);
+  return $node->title;
+}
+
+function arava_assignments_do_assignment_access($nid) {
+  $node = node_load($nid);
+  $assignment_wrp = entity_metadata_wrapper('node', $node);
+  $type = $assignment_wrp->field_assignment_type->value();
+  $course = $assignment_wrp->field_course->value();
+  $lesson = $assignment_wrp->field_lesson_num->value();
+  global $user;
+
+  // first, is the user signed up to the course?
+  module_load_include('inc', 'arava_center', 'AravaCenterDbApi.class');
+  $dbAPI = new AravaCenterDbApi();
+  if (!$dbAPI->isUserSignedUpToCourse($user->uid, $course->nid)) {
+    drupal_set_message(t('You are not signed up for this course (or did not complete your registration), so you cannot do this assignment'), 'warning');
+    return false;
+  }
+
+  // then, make sure it is allowed:
+  // homework and quizzes - if student was present / made up the class
+  if ($type == 'homework' || $type == 'quiz') {
+    $attended = $dbAPI->hasStudentAttendedClass($user->uid, $course->nid, $lesson);
+    if (!$attended) {
+      drupal_set_message(t('Our records show that you did not attend or make up this lesson, so you cannot do this assignment'), 'warning');
+    }
+    return $attended;
+  }
+  // tests - if all other assignments are complete
+  // for the time being, we deem an assignment complete if a user began to answer it.
+  else {
+    // find any homework and quizzes for this course, which the user hadn't begun.
+    module_load_include('inc', 'arava_assignments', 'AssignmentsAPI.class');
+    $assignmentsAPI = new AssignmentsAPI();
+    $incomplete = $assignmentsAPI->incompleteAssignmentsForCourse($course->nid);
+
+    if (empty($incomplete)) {
+      return true;
+    }
+    else {
+      $missing = '';
+      if (!empty($incomplete['homework'])) {
+        $missing .= t('homework for lessons') . ' ' . implode(' ,', $incomplete['homework']) . ', ';
+      }
+      if (!empty($incomplete['quiz'])) {
+        $missing .= t('quizzes for lessons') . ' ' . implode(' ,', $incomplete['quiz']);
+      }
+      drupal_set_message(t('You must complete these before taking the final test:') . ' ' . $missing, 'warning');
+      return false;
+    }
+  }
+}
+
+/**
+ * Checks that a user was indeed requested to check an assignment for another user
+ * @param $nid
+ * @param $assignment_completion_id
+ */
+function arava_assignments_check_assignment_access($nid, $assignment_completion_id) {
+  global $user;
+  $assignment_completion = db_select('assignment_completion', 'ac')
+    ->condition('ac.assignment_completion_id', $assignment_completion_id)
+    ->fields('ac', array('assignment_id', 'checker'))
+    ->execute()
+    ->fetchAssoc();
+  if (!empty($assignment_completion)) {
+    if ($assignment_completion['assignment_id'] == $nid && $assignment_completion['checker'] = $user->uid) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Helper function for auto-setting an assignment node title
+ * @param $node
+ * @return string
+ */
+function _arava_assignments_assignment_node_title($node) {
+  $node_wrp = entity_metadata_wrapper('node', $node);
+  $course = $node_wrp->field_course->title->value();
+  $assignment_type = $node_wrp->field_assignment_type->value();
+  $lesson_num = $node_wrp->field_lesson_num->value();
+
+  $assignment_type_field_info = field_info_field('field_assignment_type');
+
+  $title = $course . ' - ' . $assignment_type_field_info['settings']['allowed_values'][$assignment_type];
+  if (!empty($lesson_num)) {
+    $title .= ' - ' . $lesson_num;
+  }
+  return $title;
+}
+
+/**
+ * Implements hook_block_info
+ * @return mixed
+ */
+function arava_assignments_block_info() {
+  $blocks['course_assignments'] = array(
+    'info' => t('Course Assignments'),
+  );
+  $blocks['check_assignment_link'] = array(
+    'info' => t('Check Assignments Link'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view
+ * @param string $delta
+ * @return mixed
+ */
+function arava_assignments_block_view($delta = '') {
+  switch ($delta) {
+    case 'course_assignments':
+      $block['subject'] = t('Assignments');
+      $block['content'] = _arava_assignments_course_assignments();
+      break;
+
+    case 'check_assignment_link':
+      $block['subject'] = '';
+      $block['content'] = l(t('Assignments for me to check'), 'assignments/check');
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Callback for course_assignments block.
+ * This block should be placed on a page where the assignment is the main object.
+ */
+function _arava_assignments_course_assignments() {
+  $course = menu_get_object('node');
+  
+  if(!_arava_center_user_has_access_to_files($course)){
+	return null;
+  }
+  
+  if (!empty($course) && $course->type == 'course') {
+    module_load_include('inc', 'arava_assignments', 'AssignmentsAPI.class');
+    $assignmentsAPI = new AssignmentsAPI();
+    $assignments = $assignmentsAPI->getAssignmentsListForCourse($course->nid);
+
+    if (!empty($assignments)) {
+      $map = array(
+        'homework' => t('Homework'),
+        'quiz' => t('Quiz'),
+        'finaltest' => t('Final Test'),
+      );
+
+      $map_titles = array(
+        'homework' => t('Homework'),
+        'quiz' => t('Quizzes'),
+        'finaltest' => t('Final Test'),
+      );
+
+
+      $rows = array();
+      foreach ($assignments as $key => $values) {
+        $rows[] = array($map_titles[$key], '');
+        foreach ($values as $assignment) {
+          $status = $assignment['done'] ? t('Finished requirements for next lesson') : ($assignment['completion'] ? t('Started') : t('Not Started'));
+          if ($assignment['grade']) {
+            $status .= ' - ' . t('Grade: @grade', array('@grade' => $assignment['grade']));
+          }
+          $rows[] = array(
+            l($map[$key] . ' ' . $assignment['lesson_num'], 'assignment/' . $assignment['assignment_id'], array('attributes' => array('target' => '_blank'))),
+            $status,
+          );
+        }
+      }
+
+      $headers = array(t('Assignments'), '');
+
+      return theme('table', array('header' => $headers, 'rows' => $rows));
+    }
+    return null;
+  }
+
+}
+
+/**
+ * Callback for assignments to check list
+ */
+function _arava_assignments_assignments_to_check() {
+
+  module_load_include('inc', 'arava_assignments', 'AssignmentsAPI.class');
+  $assignmentsAPI = new AssignmentsAPI();
+  $to_check = $assignmentsAPI->getAssignmentsToCheck();
+
+  $map = array(
+    'homework' => t('Homework'),
+    'quiz' => t('Quiz'),
+    'finaltest' => t('Final Test'),
+  );
+
+  $rows = array();
+  foreach ($to_check as $types) {
+    foreach ($types as $key => $values) {
+      foreach ($values as $assignment) {
+        $rows[] = array(
+          $assignment['course_name'],
+          l($map[$key] . ' ' . $assignment['lesson_num'], 'assignment/' . $assignment['assignment_id'] . '/check/' . $assignment['assignment_completion_id'],
+            array('attributes' => array('target' => '_blank'))),
+          $assignment['student_name'],
+        );
+      }
+    }
+  }
+
+  $headers = array(t('Course'), t('Assignment'), t('For student'));
+
+  return theme('table', array('header' => $headers, 'rows' => $rows));
+
+}
+
+/**
+ * Implements hook_page_build
+ * @param $page
+ */
+function arava_assignments_page_build(&$page) {
+  $node = menu_get_object('node');
+  $arg2 = arg(2);
+  if (!empty($node) && $node->type == 'course' && empty($arg2)) {
+
+    if (user_access('administer nodes')) {
+      $link = l('>> ' . t('Let everyone know about the new assignments!'),
+          'admin/send-emails',
+          array(
+            'query' => array(
+              'view' => 'courses_reports',
+              'display' => 'page_2',
+              'args[0]' => $node->nid,
+              'predefined' => 'new_assignment',
+            ),
+            'attributes' => array('class' => array('blue-button'))))
+        . "<br>";
+
+      $blocks['course_assignments_inform'] = array(
+        '#markup' => $link,
+        '#weight' => -10,
+      );
+    }
+
+    $block = module_invoke('arava_assignments', 'block_view', 'course_assignments');
+    $blocks['course_assignments'] = array(
+      '#markup' => $block['content'],
+      '#weight' => -10,
+    );
+
+    $page['content'] = array_merge($page['content'], $blocks);
+  }
+}
+
+function arava_assignments_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'check_assignment_link':
+      $message['subject'] = t('Please check my assignment');
+
+      $message['body'][] = '<div style="direction:rtl; text-align: right">';
+      $message['body'][] = t('Dear @name', array('@name' => $params['checker_name'])) . '<br><br>';
+      $message['body'][] = t('Please login to the site at:') . '<br><br>';
+      $message['body'][] = url('user', array('absolute' => true)) . '<br><br>';
+      $message['body'][] = t('and then click this link to check my assignment:') . '<br><br>';
+      $message['body'][] = $params['assignment_name'] . '<br><br>';
+      $message['body'][] = $params['assignment_link'] . '<br><br>';
+      $message['body'][] = t('Thank you :)') . '<br>';
+      $message['body'][] = $params['doer_name'];
+      $message['body'][] = '</div>';
+
+      $message['from'] = $message['headers']['From'] = '"'.$params['doer_name'].'" <'.$params['doer_email'].'>';
+      $message['from'] = $message['headers']['Sender'] = '"'.$params['doer_name'].'" <'.$params['doer_email'].'>';
+      $message['from'] = $message['headers']['Reply-To'] = '"'.$params['doer_name'].'" <'.$params['current_user_mail'].'>';
+      break;
+  }
+}

@@ -1,0 +1,13 @@
+﻿
+@{
+    ViewBag.Title = "Viewer";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<iframe id="myviewer" src="/Home/?key=http://moar.org.il/sites/default/files/pdf_files/LR2 HW 6.pdf" width='100%' allowfullscreen webkitallowfullscreen style="border:none;"></iframe>
+<script type="text/javascript">
+    var height = window.innerHeight;
+    document.getElementById('myviewer').height = height;
+
+</script>
+
