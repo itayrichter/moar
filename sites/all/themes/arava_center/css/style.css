@@ -2051,9 +2051,17 @@ body.not-front {
 
 .view-catalog .views-field-field-teacher .node {
     max-width: 1140px;
-    padding: 70px 15px;
+    padding: 70px 15px 30px;
     margin: 0 auto;
     font-size: 16px;
+}
+
+.view-catalog table{
+    margin-bottom: 0;
+}
+.view-catalog table td{
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .view-catalog .views-field-field-teacher img {
