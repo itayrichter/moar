@@ -56,6 +56,7 @@
 			var h2 = $(this).find('h2').html();
 			// if (label.length != 0 && h2.length != 0){
 				$(this).find('.field-name-field-mt-photo').append('<div class="text_wrap"><div class="label">'+label+'</div><h2>'+h2+'</h2></div>');
+				$(this).find('tr:nth-child(2) td:last-child').append('<div class="text_wrap"><div class="label">'+label+'</div><h2>'+h2+'</h2></div>');
 			// }
 		});
 		$('.node_3023 .field-name-field-text-full .field-item').wrap('<div class="field_wrap"></div>');
