@@ -55,6 +55,14 @@ img {
     box-sizing: border-box;
 }
 
+.admin-nw.not-front .block_superfish_2 .menu_btn.active{
+    padding-top: 40px;
+}
+
+.admin-nw.not-front .header.active .menu_btn.active{
+    padding-top: 65px;
+}
+
 .menu_btn .item {
     background-color: #282828;
     width: 100%;
@@ -4219,6 +4227,9 @@ input[type="submit"] {
 
     .admin-df .menu_btn {
         top: -2px;
+    }
+    .admin-nw.not-front .header.active .menu_btn.active{
+        padding-top: 45px;
     }
 }
 
