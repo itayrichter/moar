@@ -2770,12 +2770,14 @@ body.not-front {
     background-image: url("../Images/sidebar_arrow4.png");
 }
 
+.node-type-course .fix-sidebar-second .block_content > ul > li .parent > li > a,
 .node-type-course .fix-sidebar-second .block_content > ul > li .parent > li > span {
     background-color: #ededed;
     font-size: 20px;
     font-weight: 700;
     padding: 12.5px 20px 12.5px 50px;
-    color: #c38066;
+    color: #c38066 !important;
+    text-decoration: none !important;
     display: block;
     -webkit-border-radius: 3px;
     border-radius: 3px;
@@ -2785,6 +2787,10 @@ body.not-front {
     background-image: url("../Images/sidebar_arrow3.png");
     background-position: left 12px center;
     background-repeat: no-repeat;
+}
+
+.node-type-course .fix-sidebar-second .block_content > ul > li .parent > li > a{
+    background-image: none;
 }
 
 .node-type-course .fix-sidebar-second .block_content > ul > li .parent > li ul {
@@ -3241,12 +3247,14 @@ body.not-front {
     background-image: url("../Images/sidebar_arrow4.png");
 }
 
+.page-teachings .fix-sidebar-second .block_content > ul > li .parent > li > a,
 .page-teachings .fix-sidebar-second .block_content > ul > li .parent > li > span {
     background-color: #ededed;
     font-size: 20px;
     font-weight: 700;
     padding: 12.5px 20px 12.5px 50px;
-    color: #c38066;
+    color: #c38066 !important;
+    text-decoration: none !important;
     display: block;
     -webkit-border-radius: 3px;
     border-radius: 3px;
@@ -3256,6 +3264,10 @@ body.not-front {
     background-image: url("../Images/sidebar_arrow3.png");
     background-position: left 12px center;
     background-repeat: no-repeat;
+}
+
+.page-teachings .fix-sidebar-second .block_content > ul > li .parent > li > a{
+    background-image: none;
 }
 
 .page-teachings .fix-sidebar-second .block_content > ul > li .parent > li ul {

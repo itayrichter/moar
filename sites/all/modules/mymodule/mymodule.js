@@ -125,13 +125,13 @@
 			$('.view-calendar:nth-child(3) .view-content').livequery(function(){
 				$('<div class="view-header second_header">'+pager2+'</div>').insertAfter($(this));
 			});
-			$('.view-calendar .view-content + .view-header .date-prev a').click(function(e){
-				$('.view-header:not(.second_header) .date-prev a').click();
+			$('.view-calendar .view-content + .view-header .date-prev a').livequery('mousedown',function(e){
 				e.preventDefault();
+				$(this).parents('.view-calendar').find('.view-header:not(.second_header) .date-prev a').click();
 			});
-			$('.view-calendar .view-content + .view-header .date-next a').click(function(e){
-				$('.view-header:not(.second_header) .date-next a').click();
+			$('.view-calendar .view-content + .view-header .date-next a').livequery('mousedown',function(e){
 				e.preventDefault();
+				$(this).parents('.view-calendar').find('.view-header:not(.second_header) .date-next a').click();
 			});
 		}
 		$(window).scroll(function(){
