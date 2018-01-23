@@ -4612,8 +4612,17 @@ input[type="submit"] {
         top: 0;
     }
 
+    .view-catalog .views-field-body table{
+        margin-bottom: 30px;
+    }
+
+    .view-catalog .views-field-body{
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    
     .view-catalog table td{
-        padding: 0;
+        padding: 20px 0;
     }
 
     #arava-center-view-only-file-form .form-text{
