@@ -1045,7 +1045,7 @@ body.not-front {
 }
 
 .page-user ul.primary li {
-    width: 33.3%;
+    width: 20%;
     display: block;
     font-size: 20px;
     display: inline-block;
@@ -3483,14 +3483,14 @@ body.not-front {
     padding: 0 15px;
 }
 
-.page-user.logged-in.admin-nw .tabs li {
-    display: none;
-}
 
-.page-user.logged-in.admin-nw .tabs li:nth-child(-n+3) {
+.page-user.logged-in.admin-nw .tabs li {
     display: inline-block;
 }
 
+.page-user.logged-in.admin-nw .tabs li:last-child {
+    display: none;
+}
 .page-user.logged-in .profile {
     font-size: 16px;
 }
