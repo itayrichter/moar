@@ -1939,6 +1939,10 @@ body.not-front {
     background: #fff;
 }
 
+.view-catalog .views-field-body table td{
+    padding: 15px;
+}
+
 .view-catalog .views-field-body::after {
     content: '';
     display: table;
@@ -3620,6 +3624,15 @@ table td:not(.single-day):not(.past):not(.date-box)::after {
     background-color: #8bbbcc;
 }
 
+table a{
+    color: #1674c9;
+    text-decoration: underline;
+}
+
+table a:hover{
+    text-decoration: none;
+}
+
 .page-rides-carpooling #main .tabs ul {
     border-bottom: none;
     padding: 0;
@@ -4344,6 +4357,24 @@ input[type="submit"] {
 }
 
 @media (max-width: 1200px) {
+    .block_superfish_2 > .block_content > .menu > li.menuparent .arrow_mob {
+        content: '';
+        display: block;
+        position: absolute;
+        width: 20px;
+        height: 100%;
+        right: 0;
+        top: 0;
+        background: transparent url(../Images/menu_arr.png) center no-repeat;
+        z-index: 10;
+    }
+    .block_superfish_2 > .block_content > .menu > li.menuparent ul{
+        right: 0 !important;
+        left: auto !important;
+    }
+    .block_superfish_2 > .block_content > .menu > li.menuparent > span::after, .block_superfish_2 > .block_content > .menu > li.menuparent > a::after{
+        display: none !important;
+    }
     .socials_wrap,
   .front .header {
         display: none;
