@@ -2782,7 +2782,6 @@ body.not-front {
     background-image: url("../Images/sidebar_arrow4.png");
 }
 
-/* .node-type-course .fix-sidebar-second .block_content > ul > li .parent > li > a, */
 .node-type-course .fix-sidebar-second .block_content > ul > li .parent > li > span {
     background-color: #ededed;
     font-size: 20px;
@@ -3284,7 +3283,6 @@ body.not-front {
     background-image: url("../Images/sidebar_arrow4.png");
 }
 
-.page-teachings .fix-sidebar-second .block_content > ul > li .parent > li > a,
 .page-teachings .fix-sidebar-second .block_content > ul > li .parent > li > span {
     background-color: #ededed;
     font-size: 20px;
@@ -3303,8 +3301,33 @@ body.not-front {
     background-repeat: no-repeat;
 }
 
-.page-teachings .fix-sidebar-second .block_content > ul > li .parent > li > a{
+.page-teachings  .fix-sidebar-second .block_content > ul > li .parent > li > a{
     background-image: none;
+    color: #191919 !important;
+    text-decoration: none;
+    background: none !important;
+    font-weight: 400 !important;
+    position: relative;
+    display: block;
+    padding: 10px 35px 10px 10px;
+    padding-left: 0 !important;
+    font-size: 18px;
+    background: #fff !important;
+    border-radius: 3px;
+}
+
+.page-teachings  .fix-sidebar-second .block_content > ul > li .parent > li > a::after {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    margin-top: -3px;
+    background-color: #1880d0;
+    -webkit-border-radius: 50%;
+    border-radius: 50%;
 }
 
 .page-teachings .fix-sidebar-second .block_content > ul > li .parent > li ul {
